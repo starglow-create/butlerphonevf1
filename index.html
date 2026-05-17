@@ -1,0 +1,4244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>杰克 · 全能管家终端 JACK × LI MENG OS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Noto+Sans+SC:wght@300;400;700&display=swap');
+
+:root {
+  --neon-blue: #00d4ff;
+  --neon-cyan: #0ff;
+  --neon-purple: #a855f7;
+  --deep-blue: #020b18;
+  --mid-blue: #041428;
+  --panel-bg: rgba(0,20,50,0.7);
+  --panel-border: rgba(0,212,255,0.3);
+  --glow: 0 0 20px rgba(0,212,255,0.5);
+  --glow-strong: 0 0 40px rgba(0,212,255,0.8), 0 0 80px rgba(0,212,255,0.3);
+  --text-main: #e0f4ff;
+  --text-dim: rgba(150,200,255,0.6);
+  --font-display: 'Orbitron', monospace;
+  --font-body: 'Rajdhani', 'Noto Sans SC', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--deep-blue);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+input, textarea, select {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* ===== PARTICLE CANVAS ===== */
+#particle-canvas {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== BOOT SCREEN ===== */
+#boot-screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.boot-scan-line {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+.boot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridPulse 3s ease-in-out infinite;
+}
+
+@keyframes gridPulse {
+  0%,100% { opacity:0.5; }
+  50% { opacity:1; }
+}
+
+.boot-robot-container {
+  position: relative;
+  width: 200px;
+  height: 260px;
+  margin-bottom: 40px;
+}
+
+.boot-robot {
+  position: relative;
+  width: 200px;
+  height: 260px;
+  animation: bootRobotAppear 2s ease-out 0.5s both;
+}
+
+@keyframes bootRobotAppear {
+  0% { opacity:0; transform:scale(0.5) translateY(50px); filter:brightness(0); }
+  50% { filter:brightness(2); }
+  100% { opacity:1; transform:scale(1) translateY(0); filter:brightness(1); }
+}
+
+.boot-hologram-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--neon-blue);
+  box-shadow: 0 0 20px var(--neon-blue);
+  animation: ringRotate 3s linear infinite;
+}
+
+.ring1 { width:240px; height:240px; top:-20px; left:-20px; border-style:dashed; opacity:0.5; }
+.ring2 { width:280px; height:280px; top:-40px; left:-40px; animation-direction:reverse; animation-duration:4s; opacity:0.3; }
+.ring3 { width:320px; height:320px; top:-60px; left:-60px; animation-duration:6s; opacity:0.2; }
+
+@keyframes ringRotate {
+  from { transform:rotate(0deg); }
+  to { transform:rotate(360deg); }
+}
+
+/* Boot robot SVG figure */
+.boot-robot svg {
+  width:100%; height:100%;
+  filter: drop-shadow(0 0 20px var(--neon-blue)) drop-shadow(0 0 40px rgba(0,212,255,0.4));
+}
+
+.boot-text-container {
+  text-align: center;
+  z-index: 10;
+}
+
+.boot-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  letter-spacing: 0.3em;
+  color: var(--neon-blue);
+  text-shadow: var(--glow-strong);
+  animation: bootTitle 1s ease-out 1.5s both;
+  margin-bottom: 8px;
+}
+
+.boot-subtitle {
+  font-size: 0.9rem;
+  letter-spacing: 0.5em;
+  color: var(--text-dim);
+  animation: bootTitle 1s ease-out 2s both;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+}
+
+@keyframes bootTitle {
+  from { opacity:0; transform:translateY(20px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+.boot-log {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--neon-blue);
+  text-align: left;
+  width: 400px;
+  max-width: 90vw;
+  animation: bootTitle 0.5s ease-out 2.5s both;
+}
+
+.boot-log-line {
+  margin-bottom: 4px;
+  opacity: 0;
+  animation: logAppear 0.3s ease-out forwards;
+}
+
+@keyframes logAppear {
+  to { opacity: 1; }
+}
+
+.boot-progress {
+  width: 400px;
+  max-width: 90vw;
+  height: 2px;
+  background: rgba(0,212,255,0.2);
+  margin-top: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.boot-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-blue), var(--neon-cyan));
+  box-shadow: 0 0 10px var(--neon-blue);
+  width: 0%;
+  transition: width 0.1s ease;
+}
+
+/* ===== MAIN OS ===== */
+#main-os {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  z-index: 1;
+}
+
+/* Status Bar */
+#status-bar {
+  height: 44px;
+  background: rgba(2,11,24,0.9);
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-time {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+.status-date {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+.status-center {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-icon {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-blue);
+  box-shadow: 0 0 6px var(--neon-blue);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,100% { opacity:1; box-shadow:0 0 6px var(--neon-blue); }
+  50% { opacity:0.5; box-shadow:0 0 2px var(--neon-blue); }
+}
+
+.battery-bar {
+  width: 24px;
+  height: 10px;
+  border: 1px solid var(--neon-blue);
+  border-radius: 2px;
+  padding: 1px;
+  position: relative;
+}
+.battery-bar::after {
+  content:'';
+  position:absolute;
+  right:-4px; top:50%;
+  transform:translateY(-50%);
+  width:3px;height:5px;
+  background:var(--neon-blue);
+  border-radius:0 1px 1px 0;
+}
+.battery-fill {
+  height:100%;
+  width:80%;
+  background:var(--neon-blue);
+  border-radius:1px;
+}
+
+/* Main Content Area */
+#content-area {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Sidebar Nav */
+#sidebar {
+  width: 64px;
+  background: rgba(2,11,24,0.8);
+  border-right: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 8px;
+  backdrop-filter: blur(20px);
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: var(--text-dim);
+  font-size: 18px;
+  position: relative;
+  gap: 2px;
+}
+
+.nav-btn span.nav-label {
+  font-size: 8px;
+  font-family: var(--font-body);
+  letter-spacing: 0.05em;
+  line-height:1;
+}
+
+.nav-btn:hover, .nav-btn.active {
+  border-color: var(--panel-border);
+  background: rgba(0,212,255,0.1);
+  color: var(--neon-blue);
+  box-shadow: 0 0 15px rgba(0,212,255,0.3);
+}
+
+.nav-btn.active::before {
+  content:'';
+  position:absolute;
+  left:-1px; top:50%;
+  transform:translateY(-50%);
+  width:3px; height:24px;
+  background:var(--neon-blue);
+  border-radius:0 2px 2px 0;
+  box-shadow:0 0 10px var(--neon-blue);
+}
+
+/* Panels */
+.panel {
+  display: none;
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  flex-direction: column;
+  animation: panelIn 0.3s ease-out;
+}
+
+.panel.active {
+  display: flex;
+}
+
+@keyframes panelIn {
+  from { opacity:0; transform:translateX(10px); }
+  to { opacity:1; transform:translateX(0); }
+}
+
+/* Panel Headers */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.panel-header h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+.panel-icon {
+  font-size: 1.2rem;
+  color: var(--neon-blue);
+}
+
+/* Glass Card */
+.glass-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 30px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+  opacity:0.5;
+}
+
+/* ===== CHAT PANEL ===== */
+#chat-panel {
+  padding: 0;
+}
+
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#chat-messages::-webkit-scrollbar { width:4px; }
+#chat-messages::-webkit-scrollbar-track { background:transparent; }
+#chat-messages::-webkit-scrollbar-thumb { background:var(--panel-border); border-radius:2px; }
+
+.msg-row {
+  display: flex;
+  gap: 12px;
+  animation: msgIn 0.3s ease-out;
+}
+
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+.msg-row.user { flex-direction: row-reverse; }
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  background: rgba(0,20,50,0.8);
+}
+
+.msg-avatar.ai {
+  background: rgba(0,50,100,0.5);
+  color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0,212,255,0.3);
+}
+
+.msg-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  position: relative;
+}
+
+.msg-bubble.ai {
+  background: rgba(0,30,70,0.8);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  border-radius: 4px 12px 12px 12px;
+  box-shadow: 0 0 20px rgba(0,212,255,0.15);
+}
+
+.msg-bubble.user {
+  background: rgba(0,100,200,0.3);
+  border: 1px solid rgba(0,150,255,0.4);
+  color: var(--text-main);
+  border-radius: 12px 4px 12px 12px;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  align-items: center;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-blue);
+  box-shadow: 0 0 6px var(--neon-blue);
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay:0.15s; }
+.typing-dot:nth-child(3) { animation-delay:0.3s; }
+
+@keyframes typingBounce {
+  0%,80%,100% { transform:translateY(0); opacity:0.5; }
+  40% { transform:translateY(-6px); opacity:1; }
+}
+
+#chat-input-area {
+  padding: 16px 20px;
+  border-top: 1px solid var(--panel-border);
+  background: rgba(2,11,24,0.9);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  backdrop-filter: blur(20px);
+}
+
+#chat-input {
+  flex: 1;
+  background: rgba(0,20,50,0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  resize: none;
+  max-height: 100px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#chat-input:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 15px rgba(0,212,255,0.3);
+}
+
+#chat-input::placeholder { color:var(--text-dim); }
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0,100,200,0.5), rgba(0,50,150,0.5));
+  border: 1px solid var(--neon-blue);
+  color: var(--neon-blue);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(0,212,255,0.3);
+  transition: all 0.3s;
+}
+
+.send-btn:hover {
+  background: rgba(0,212,255,0.2);
+  box-shadow: 0 0 25px rgba(0,212,255,0.6);
+  transform: scale(1.05);
+}
+
+/* API Key Setup */
+#api-setup {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.api-input {
+  background: rgba(0,20,50,0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: var(--text-main);
+  font-family: monospace;
+  font-size: 0.85rem;
+  outline: none;
+  width: 100%;
+}
+
+.api-input:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0,212,255,0.3);
+}
+
+.cyber-btn {
+  background: rgba(0,50,150,0.4);
+  border: 1px solid var(--neon-blue);
+  color: var(--neon-blue);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(0,212,255,0.2);
+}
+
+.cyber-btn:hover {
+  background: rgba(0,212,255,0.15);
+  box-shadow: 0 0 20px rgba(0,212,255,0.5);
+}
+
+/* ===== SCHEDULE PANEL ===== */
+#schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+}
+
+.schedule-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0,20,60,0.5);
+  border: 1px solid var(--panel-border);
+  position: relative;
+  transition: all 0.3s;
+}
+
+.schedule-item:hover {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 15px rgba(0,212,255,0.2);
+}
+
+.schedule-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.schedule-time {
+  font-size: 0.75rem;
+  color: var(--neon-blue);
+  font-family: var(--font-display);
+}
+
+.schedule-countdown {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.schedule-delete {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: none;
+  border: none;
+  color: rgba(255,100,100,0.5);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+.schedule-delete:hover { color: rgba(255,100,100,1); }
+
+.add-schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.cyber-input {
+  background: rgba(0,20,50,0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  outline: none;
+  flex: 1;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.cyber-input:focus {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0,212,255,0.3);
+}
+
+.cyber-input::placeholder { color:var(--text-dim); }
+
+/* ===== MEMO PANEL ===== */
+.memo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.memo-card {
+  background: rgba(0,20,60,0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.memo-card:hover {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 15px rgba(0,212,255,0.2);
+}
+
+.memo-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-main);
+}
+
+.memo-card-preview {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.memo-card-date {
+  font-size: 0.65rem;
+  color: rgba(0,212,255,0.4);
+  margin-top: 8px;
+  font-family: monospace;
+}
+
+.memo-editor {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.memo-editor.active { display: flex; }
+
+.memo-title-input {
+  background: rgba(0,20,50,0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--neon-blue);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  outline: none;
+  letter-spacing: 0.1em;
+}
+
+.memo-title-input:focus { border-color:var(--neon-blue); box-shadow:0 0 10px rgba(0,212,255,0.3); }
+
+.memo-body-input {
+  flex: 1;
+  background: rgba(0,20,50,0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  outline: none;
+  resize: none;
+  line-height: 1.7;
+  min-height: 200px;
+}
+
+.memo-body-input:focus { border-color:var(--neon-blue); box-shadow:0 0 10px rgba(0,212,255,0.2); }
+
+/* ===== HANDWRITE PANEL ===== */
+#handwrite-canvas {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  cursor: crosshair;
+  touch-action: none;
+  background: rgba(0,10,30,0.5);
+  box-shadow: 0 0 20px rgba(0,212,255,0.1), inset 0 0 30px rgba(0,0,20,0.5);
+  max-width: 100%;
+}
+
+.handwrite-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.color-dot.active { border-color: white; transform:scale(1.2); }
+
+.size-slider {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--panel-border);
+  outline: none;
+  width: 80px;
+}
+
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--neon-blue);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--neon-blue);
+}
+
+/* ===== MEMORY PANEL ===== */
+.memory-section {
+  margin-bottom: 16px;
+}
+
+.memory-section-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--neon-blue);
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+.memory-item {
+  background: rgba(0,20,60,0.4);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  line-height: 1.5;
+  position: relative;
+}
+
+.memory-delete {
+  position: absolute;
+  right: 8px; top: 8px;
+  background: none;
+  border: none;
+  color: rgba(255,100,100,0.4);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.memory-delete:hover { color: rgba(255,100,100,1); }
+
+/* ===== SETTINGS PANEL ===== */
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0,212,255,0.1);
+}
+
+.settings-label {
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.settings-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  background: rgba(0,212,255,0.2);
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.toggle.on {
+  background: rgba(0,212,255,0.4);
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0,212,255,0.4);
+}
+
+.toggle::after {
+  content:'';
+  position:absolute;
+  width:18px; height:18px;
+  border-radius:50%;
+  background: var(--text-dim);
+  top:2px; left:2px;
+  transition: all 0.3s;
+}
+
+.toggle.on::after {
+  left:22px;
+  background: var(--neon-blue);
+  box-shadow: 0 0 8px var(--neon-blue);
+}
+
+/* ===== FLOATING ROBOT ===== */
+#floating-robot {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 200;
+  cursor: pointer;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-10px); }
+}
+
+#floating-robot:hover .robot-body {
+  filter: drop-shadow(0 0 30px var(--neon-blue));
+}
+
+#floating-robot svg {
+  width: 80px;
+  height: 110px;
+  filter: drop-shadow(0 0 15px rgba(0,212,255,0.6));
+}
+
+.robot-scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.8), transparent);
+  animation: robotScan 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes robotScan {
+  0% { top:0; opacity:0; }
+  10% { opacity:1; }
+  90% { opacity:1; }
+  100% { top:100%; opacity:0; }
+}
+
+/* Wave animation for AI speaking */
+.wave-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 16px;
+}
+
+.wave-bar {
+  width: 3px;
+  background: var(--neon-blue);
+  border-radius: 2px;
+  animation: wave 1s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) { animation-delay:0; height:4px; }
+.wave-bar:nth-child(2) { animation-delay:0.1s; height:8px; }
+.wave-bar:nth-child(3) { animation-delay:0.2s; height:12px; }
+.wave-bar:nth-child(4) { animation-delay:0.3s; height:16px; }
+.wave-bar:nth-child(5) { animation-delay:0.4s; height:12px; }
+.wave-bar:nth-child(6) { animation-delay:0.5s; height:8px; }
+.wave-bar:nth-child(7) { animation-delay:0.6s; height:4px; }
+
+@keyframes wave {
+  0%,100% { transform:scaleY(0.3); }
+  50% { transform:scaleY(1); }
+}
+
+/* Notification toast */
+.toast {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background: rgba(0,30,80,0.95);
+  border: 1px solid var(--neon-blue);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  box-shadow: var(--glow);
+  z-index: 9000;
+  animation: toastIn 0.3s ease-out, toastOut 0.3s ease-out 3.7s forwards;
+  max-width: 300px;
+}
+
+@keyframes toastIn {
+  from { opacity:0; transform:translateX(20px); }
+  to { opacity:1; transform:translateX(0); }
+}
+
+@keyframes toastOut {
+  to { opacity:0; transform:translateX(20px); }
+}
+
+/* Glitch effect */
+@keyframes glitch {
+  0% { clip-path: inset(0 0 98% 0); transform: translate(-2px); }
+  20% { clip-path: inset(30% 0 40% 0); transform: translate(2px); }
+  40% { clip-path: inset(70% 0 10% 0); transform: translate(-1px); }
+  60% { clip-path: inset(10% 0 70% 0); transform: translate(1px); }
+  80% { clip-path: inset(50% 0 30% 0); transform: translate(-2px); }
+  100% { clip-path: inset(98% 0 0 0); transform: translate(0); }
+}
+
+/* Scrollbar */
+.panel::-webkit-scrollbar { width:4px; }
+.panel::-webkit-scrollbar-track { background:transparent; }
+.panel::-webkit-scrollbar-thumb { background:var(--panel-border); border-radius:2px; }
+
+/* Corner decorations */
+.corner-tl, .corner-tr, .corner-bl, .corner-br {
+  position:absolute;
+  width:16px; height:16px;
+  border-color:var(--neon-blue);
+  border-style:solid;
+  opacity:0.6;
+}
+.corner-tl { top:0; left:0; border-width:2px 0 0 2px; }
+.corner-tr { top:0; right:0; border-width:2px 2px 0 0; }
+.corner-bl { bottom:0; left:0; border-width:0 0 2px 2px; }
+.corner-br { bottom:0; right:0; border-width:0 2px 2px 0; }
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  #sidebar { width: 50px; }
+  .nav-btn { width: 36px; height: 36px; font-size: 15px; }
+  .nav-btn span.nav-label { display: none; }
+  #schedule-grid { grid-template-columns: 1fr; }
+  #floating-robot { bottom: 20px; right: 16px; }
+  #floating-robot svg { width: 60px; height: 75px; }
+  .boot-title { font-size: 1.5rem; }
+  .boot-robot-container { width: 140px; height: 180px; }
+}
+
+/* ===== FUTURE PROJECTS ===== */
+.fp-scan-line {
+  position:absolute; left:0; right:0; height:2px; top:0;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.7),transparent);
+  animation:scan 3s linear infinite; pointer-events:none;
+}
+
+.fp-energy-bar {
+  height:100%;
+  background:linear-gradient(90deg,var(--neon-blue),var(--neon-purple),var(--neon-blue));
+  background-size:200% 100%;
+  animation:energyFlow 2s linear infinite;
+  border-radius:2px;
+}
+@keyframes energyFlow {
+  0%{background-position:0%} 100%{background-position:200%}
+}
+
+.fp-core-ring {
+  width:120px; height:120px;
+  border-radius:50%;
+  border:2px solid var(--neon-blue);
+  box-shadow:0 0 20px var(--neon-blue),0 0 40px rgba(0,212,255,0.3),inset 0 0 20px rgba(0,212,255,0.1);
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+  animation:corePulse 3s ease-in-out infinite;
+}
+@keyframes corePulse {
+  0%,100%{box-shadow:0 0 20px var(--neon-blue),0 0 40px rgba(0,212,255,0.3),inset 0 0 20px rgba(0,212,255,0.1);}
+  50%{box-shadow:0 0 40px var(--neon-blue),0 0 80px rgba(0,212,255,0.5),inset 0 0 30px rgba(0,212,255,0.2);}
+}
+.fp-core-ring::before {
+  content:''; position:absolute;
+  width:140px; height:140px;
+  border-radius:50%;
+  border:1px dashed rgba(0,212,255,0.3);
+  animation:coreSpin 8s linear infinite;
+}
+.fp-core-ring::after {
+  content:''; position:absolute;
+  width:160px; height:160px;
+  border-radius:50%;
+  border:1px solid rgba(168,85,247,0.2);
+  animation:coreSpin 12s linear infinite reverse;
+}
+@keyframes coreSpin { to{transform:rotate(360deg);} }
+
+.fp-core-inner {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.fp-core-icon { font-size:2rem; filter:drop-shadow(0 0 10px var(--neon-blue)); }
+.fp-core-label { font-family:var(--font-display); font-size:0.5rem; letter-spacing:0.2em; color:var(--neon-blue); }
+.fp-core-status { font-size:0.55rem; color:#00ff88; letter-spacing:0.15em; }
+
+.fp-section-label {
+  font-family:var(--font-display);
+  font-size:0.62rem;
+  letter-spacing:0.25em;
+  color:rgba(0,212,255,0.5);
+  margin-bottom:10px;
+  padding-left:4px;
+  border-left:2px solid var(--neon-blue);
+  padding-left:8px;
+}
+
+.fp-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:4px;
+}
+
+.fp-card {
+  position:relative;
+  background:rgba(0,15,40,0.7);
+  border-radius:10px;
+  padding:14px 12px 10px;
+  cursor:pointer;
+  overflow:hidden;
+  transition:all 0.3s;
+  border:1px solid rgba(0,212,255,0.15);
+  display:flex; flex-direction:column; gap:4px;
+}
+.fp-card:hover {
+  transform:translateY(-2px) scale(1.02);
+  border-color:rgba(0,212,255,0.5);
+}
+.fp-card-wide {
+  grid-column:span 2;
+  flex-direction:row; align-items:center; gap:14px; padding:14px 16px;
+}
+.fp-card-wide .fp-card-bar { flex:1; margin-top:0; }
+.fp-card-wide .fp-card-sub { font-size:0.6rem; }
+
+.fp-card-glow {
+  position:absolute; inset:0; opacity:0; border-radius:10px;
+  transition:opacity 0.3s;
+  pointer-events:none;
+}
+.fp-card:hover .fp-card-glow { opacity:1; }
+
+/* Glow colors per card type */
+.fp-card-red .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(255,50,50,0.15),transparent 70%); }
+.fp-card-purple .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,0.15),transparent 70%); }
+.fp-card-orange .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(249,115,22,0.15),transparent 70%); }
+.fp-card-cyan .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.15),transparent 70%); }
+.fp-card-green .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(0,255,136,0.12),transparent 70%); }
+.fp-card-blue .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,0.15),transparent 70%); }
+.fp-card-yellow .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(234,179,8,0.15),transparent 70%); }
+.fp-card-pink .fp-card-glow { background:radial-gradient(ellipse at 50% 0%,rgba(236,72,153,0.2),transparent 70%); }
+
+/* Corner brackets */
+.fp-card-border-tl {
+  position:absolute; top:4px; left:4px;
+  width:10px; height:10px;
+  border-top:1px solid; border-left:1px solid;
+  border-color:inherit; opacity:0.6;
+}
+.fp-card-border-br {
+  position:absolute; bottom:4px; right:4px;
+  width:10px; height:10px;
+  border-bottom:1px solid; border-right:1px solid;
+  border-color:inherit; opacity:0.6;
+}
+
+/* Border colors per type */
+.fp-card-red { border-color:rgba(255,70,70,0.25); }
+.fp-card-red .fp-card-border-tl, .fp-card-red .fp-card-border-br { border-color:rgba(255,70,70,0.6); }
+.fp-card-red:hover { border-color:rgba(255,70,70,0.6); box-shadow:0 0 20px rgba(255,50,50,0.25); }
+
+.fp-card-purple { border-color:rgba(168,85,247,0.25); }
+.fp-card-purple .fp-card-border-tl,.fp-card-purple .fp-card-border-br { border-color:rgba(168,85,247,0.6); }
+.fp-card-purple:hover { border-color:rgba(168,85,247,0.6); box-shadow:0 0 20px rgba(168,85,247,0.25); }
+
+.fp-card-orange { border-color:rgba(249,115,22,0.25); }
+.fp-card-orange .fp-card-border-tl,.fp-card-orange .fp-card-border-br { border-color:rgba(249,115,22,0.6); }
+.fp-card-orange:hover { border-color:rgba(249,115,22,0.6); box-shadow:0 0 20px rgba(249,115,22,0.25); }
+
+.fp-card-cyan { border-color:rgba(0,212,255,0.25); }
+.fp-card-cyan .fp-card-border-tl,.fp-card-cyan .fp-card-border-br { border-color:rgba(0,212,255,0.6); }
+.fp-card-cyan:hover { border-color:rgba(0,212,255,0.6); box-shadow:0 0 20px rgba(0,212,255,0.25); }
+
+.fp-card-green { border-color:rgba(0,255,136,0.2); }
+.fp-card-green .fp-card-border-tl,.fp-card-green .fp-card-border-br { border-color:rgba(0,255,136,0.5); }
+.fp-card-green:hover { border-color:rgba(0,255,136,0.5); box-shadow:0 0 20px rgba(0,255,136,0.2); }
+
+.fp-card-blue { border-color:rgba(59,130,246,0.25); }
+.fp-card-blue .fp-card-border-tl,.fp-card-blue .fp-card-border-br { border-color:rgba(59,130,246,0.6); }
+.fp-card-blue:hover { border-color:rgba(59,130,246,0.6); box-shadow:0 0 20px rgba(59,130,246,0.25); }
+
+.fp-card-yellow { border-color:rgba(234,179,8,0.25); }
+.fp-card-yellow .fp-card-border-tl,.fp-card-yellow .fp-card-border-br { border-color:rgba(234,179,8,0.6); }
+.fp-card-yellow:hover { border-color:rgba(234,179,8,0.6); box-shadow:0 0 20px rgba(234,179,8,0.2); }
+
+.fp-card-pink { border-color:rgba(236,72,153,0.25); }
+.fp-card-pink .fp-card-border-tl,.fp-card-pink .fp-card-border-br { border-color:rgba(236,72,153,0.6); }
+.fp-card-pink:hover { border-color:rgba(236,72,153,0.6); box-shadow:0 0 20px rgba(236,72,153,0.3); }
+
+.fp-card-icon { font-size:1.5rem; line-height:1; filter:drop-shadow(0 0 6px rgba(0,212,255,0.5)); }
+.fp-card-name { font-family:var(--font-display); font-size:0.72rem; letter-spacing:0.1em; color:var(--text-main); }
+.fp-card-sub { font-size:0.55rem; letter-spacing:0.2em; color:var(--text-dim); }
+.fp-card-bar { height:3px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; margin-top:4px; }
+.fp-bar-fill { height:100%; border-radius:2px; }
+.fp-card-status { font-size:0.55rem; letter-spacing:0.15em; margin-top:3px; }
+.fp-status-ready { color:#00ff88; }
+.fp-status-standby { color:rgba(0,212,255,0.5); }
+.fp-status-charge { color:#ffaa00; animation:chargeFlash 1s ease-in-out infinite; }
+@keyframes chargeFlash { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+@keyframes busterCharge {
+  0%{background-position:0%;} 50%{background-position:100%;} 100%{background-position:0%;}
+}
+
+/* Overlay styles */
+.fmo-ring {
+  position:absolute; border-radius:50%;
+  border:1px solid; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  animation:fmoRingPulse 2s ease-in-out infinite;
+}
+.fmo-ring1 { width:60px; height:60px; border-color:rgba(0,212,255,0.6); }
+.fmo-ring2 { width:100px; height:100px; border-color:rgba(0,212,255,0.3); animation-delay:0.3s; }
+.fmo-ring3 { width:140px; height:140px; border-color:rgba(0,212,255,0.15); animation-delay:0.6s; border-style:dashed; }
+@keyframes fmoRingPulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+#fmo-radar-sweep {
+  position:absolute; top:50%; left:50%;
+  width:70px; height:2px;
+  background:linear-gradient(90deg,rgba(0,212,255,0.8),transparent);
+  transform-origin:left center;
+  animation:radarSweep 2s linear infinite;
+}
+@keyframes radarSweep { to{transform:rotate(360deg);} }
+
+#fmo-center-dot {
+  position:absolute; top:50%; left:50%;
+  width:10px; height:10px;
+  border-radius:50%;
+  background:var(--neon-blue);
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 15px var(--neon-blue);
+  animation:breathe 1.5s ease-in-out infinite;
+}
+
+.fp-activate-btn {
+  background:linear-gradient(135deg,rgba(0,100,200,0.4),rgba(0,50,150,0.4));
+  border:1px solid var(--neon-blue);
+  color:var(--neon-blue);
+  padding:10px 28px;
+  border-radius:8px;
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  letter-spacing:0.2em;
+  cursor:pointer;
+  box-shadow:0 0 20px rgba(0,212,255,0.3);
+  transition:all 0.3s;
+}
+.fp-activate-btn:hover {
+  background:rgba(0,212,255,0.2);
+  box-shadow:0 0 40px rgba(0,212,255,0.6);
+  transform:scale(1.05);
+}
+
+.fmo-stat-row {
+  display:flex; align-items:center; gap:8px; font-size:0.72rem;
+}
+.fmo-stat-label { color:var(--text-dim); width:80px; flex-shrink:0; }
+.fmo-stat-bar { flex:1; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+.fmo-stat-fill { height:100%; border-radius:2px; }
+.fmo-stat-val { color:var(--neon-blue); font-family:monospace; width:36px; text-align:right; flex-shrink:0; }
+
+
+.daily-cat-btn {
+  background: rgba(0,20,60,0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.daily-cat-btn:hover, .daily-cat-btn.active {
+  border-color: var(--neon-blue);
+  background: rgba(0,212,255,0.12);
+  color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0,212,255,0.25);
+}
+/* ===== GUNDAM SPACESHIP LETTER CARD ===== */
+.daily-advice-card {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* === ENVELOPE / CLOSED STATE === */
+.msg-envelope {
+  background: linear-gradient(135deg, rgba(0,15,40,0.95) 0%, rgba(0,30,70,0.9) 50%, rgba(0,10,30,0.95) 100%);
+  border: 1px solid rgba(0,212,255,0.35);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  overflow: visible;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 30px rgba(0,212,255,0.15), inset 0 0 40px rgba(0,0,20,0.5);
+}
+.msg-envelope::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,212,255,0.03) 40px),
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,212,255,0.03) 40px);
+  pointer-events: none;
+}
+.msg-envelope-header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(0,212,255,0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+.msg-envelope-icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 8px rgba(0,212,255,0.6));
+  animation: envelopePulse 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes envelopePulse {
+  0%,100% { filter: drop-shadow(0 0 8px rgba(0,212,255,0.6)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(0,212,255,1)); }
+}
+.msg-envelope-meta {
+  flex: 1;
+  min-width: 0;
+}
+.msg-envelope-from {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  color: rgba(0,212,255,0.5);
+  margin-bottom: 2px;
+}
+.msg-envelope-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  color: var(--neon-blue);
+  text-shadow: 0 0 12px rgba(0,212,255,0.5);
+  word-break: break-all;
+}
+.msg-envelope-date {
+  font-size: 0.62rem;
+  color: rgba(0,212,255,0.4);
+  font-family: monospace;
+  margin-top: 3px;
+}
+.msg-envelope-stamp {
+  width: 44px; height: 52px;
+  border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 2px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(0,30,70,0.5);
+  flex-shrink: 0;
+  gap: 2px;
+}
+.msg-stamp-inner {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 4px var(--neon-blue));
+}
+.msg-stamp-label {
+  font-family: var(--font-display);
+  font-size: 0.38rem;
+  letter-spacing: 0.1em;
+  color: var(--neon-blue);
+}
+
+/* Preview strip — show first line, no truncation */
+.msg-preview-strip {
+  padding: 10px 16px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+  border-bottom: 1px dashed rgba(0,212,255,0.1);
+  word-break: break-all;
+  white-space: normal;
+}
+
+/* Open button bar */
+.msg-open-bar {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.msg-open-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--neon-blue);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.msg-open-btn:hover {
+  background: rgba(0,212,255,0.18);
+  box-shadow: 0 0 12px rgba(0,212,255,0.4);
+}
+.msg-classification {
+  font-family: monospace;
+  font-size: 0.6rem;
+  color: rgba(255,80,80,0.6);
+  letter-spacing: 0.15em;
+}
+
+/* === LETTER / OPEN STATE - now handled by modal === */
+.msg-letter { display: none; } /* keep hidden in card, show via modal */
+
+/* ===== LETTER MODAL OVERLAY ===== */
+#letter-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0,0,10,0.88);
+  backdrop-filter: blur(10px);
+  animation: modalFadeIn 0.3s ease;
+}
+#letter-modal.open { display: flex; }
+@keyframes modalFadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+#letter-modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,6,20,0.99);
+  border: 1px solid rgba(0,212,255,0.5);
+  border-radius: 6px;
+  box-shadow: 0 0 80px rgba(0,212,255,0.35), 0 0 160px rgba(0,212,255,0.12), inset 0 0 60px rgba(0,0,20,0.8);
+  overflow: hidden;
+  animation: modalSlideIn 0.35s cubic-bezier(0.23,1,0.32,1);
+  min-width: 0;
+  box-sizing: border-box;
+}
+@keyframes modalSlideIn {
+  from { opacity:0; transform: scale(0.94) translateY(20px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+/* Scanlines */
+#letter-modal-box::before {
+  content:'';
+  position:absolute; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,212,255,0.012) 4px);
+  pointer-events:none; z-index:0;
+}
+/* Top accent line */
+#letter-modal-box::after {
+  content:'';
+  position:absolute; top:0; left:0; right:0;
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-purple), var(--neon-blue), transparent);
+  z-index:1;
+}
+/* Corner brackets */
+.lm-corner {
+  position:absolute; width:20px; height:20px;
+  border-color: var(--neon-blue); border-style:solid;
+  z-index:2;
+}
+.lm-corner-tl { top:6px; left:6px; border-width:2px 0 0 2px; }
+.lm-corner-tr { top:6px; right:6px; border-width:2px 2px 0 0; }
+.lm-corner-bl { bottom:6px; left:6px; border-width:0 0 2px 2px; }
+.lm-corner-br { bottom:6px; right:6px; border-width:0 2px 2px 0; }
+
+/* Modal header */
+#letter-modal-header {
+  flex-shrink: 0;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(0,212,255,0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+.lm-header-icon { font-size:1.6rem; filter:drop-shadow(0 0 8px var(--neon-blue)); flex-shrink:0; }
+.lm-header-meta { flex:1; min-width:0; }
+.lm-header-from {
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: rgba(0,212,255,0.45);
+  margin-bottom:2px;
+}
+.lm-header-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  color: var(--neon-blue);
+  text-shadow: 0 0 12px rgba(0,212,255,0.5);
+}
+.lm-header-date {
+  font-size:0.6rem;
+  color:rgba(0,212,255,0.35);
+  font-family:monospace;
+  margin-top:2px;
+}
+.lm-header-stamp {
+  width:40px; height:48px;
+  border:1px solid rgba(0,212,255,0.3);
+  border-radius:2px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background:rgba(0,30,70,0.5);
+  flex-shrink:0; gap:2px;
+}
+.lm-stamp-icon { font-size:1rem; }
+.lm-stamp-txt { font-family:var(--font-display); font-size:0.35rem; letter-spacing:0.08em; color:var(--neon-blue); }
+
+/* Modal body - scrollable */
+#letter-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px 36px;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+#letter-modal-body::-webkit-scrollbar { width:5px; }
+#letter-modal-body::-webkit-scrollbar-track { background:transparent; }
+#letter-modal-body::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.35); border-radius:3px; }
+
+.lm-salute {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: rgba(0,212,255,0.5);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,212,255,0.1);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+.lm-body-text {
+  font-size: 1rem;
+  line-height: 2.1;
+  color: #daeeff;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  font-family: 'Noto Sans SC', 'Rajdhani', sans-serif;
+  letter-spacing: 0.03em;
+  width: 100%;
+  display: block;
+}
+.lm-sig {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,212,255,0.12);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lm-sig-icon { font-size:1.2rem; }
+.lm-sig-name { font-family:var(--font-display); font-size:0.6rem; letter-spacing:0.15em; color:var(--neon-blue); }
+.lm-sig-sub  { font-size:0.55rem; color:rgba(0,212,255,0.35); letter-spacing:0.06em; margin-top:1px; }
+
+/* Modal footer */
+#letter-modal-footer {
+  flex-shrink: 0;
+  padding: 12px 18px;
+  border-top: 1px solid rgba(0,212,255,0.12);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: rgba(0,3,12,0.6);
+  position: relative;
+  z-index: 1;
+}
+.lm-close-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(0,212,255,0.25);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: rgba(0,212,255,0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lm-close-btn:hover { border-color:var(--neon-blue); color:var(--neon-blue); box-shadow:0 0 10px rgba(0,212,255,0.3); }
+
+
+/* History items — envelope mini style */
+.daily-history-item {
+  background: rgba(0,10,30,0.6);
+  border: 1px solid rgba(0,212,255,0.12);
+  border-left: 3px solid rgba(0,212,255,0.4);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.daily-history-item:hover {
+  border-color: var(--neon-blue);
+  border-left-color: var(--neon-blue);
+  color: var(--text-main);
+  background: rgba(0,20,50,0.6);
+  box-shadow: 0 0 10px rgba(0,212,255,0.15);
+}
+.advice-generating {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:40px 20px; gap:16px;
+}
+.advice-gen-ring {
+  width:60px; height:60px; border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--neon-blue);
+  border-right-color:var(--neon-purple);
+  animation:spin 1s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.model-preset-btn {
+  background: rgba(0,20,60,0.5);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+.model-preset-btn:hover {
+  border-color: var(--neon-blue);
+  color: var(--neon-blue);
+  background: rgba(0,212,255,0.08);
+}
+
+input[type="date"], input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Priority badge */
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+.priority-high { background:rgba(255,50,50,0.2); border:1px solid rgba(255,50,50,0.4); color:#ff7777; }
+.priority-mid { background:rgba(255,165,0,0.2); border:1px solid rgba(255,165,0,0.4); color:#ffaa44; }
+.priority-low { background:rgba(0,200,100,0.2); border:1px solid rgba(0,200,100,0.4); color:#44ffaa; }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+
+<!-- ===== BOOT SCREEN ===== -->
+<div id="boot-screen">
+  <div class="boot-scan-line"></div>
+  <div class="boot-grid"></div>
+  
+  <div class="boot-robot-container">
+    <div class="boot-hologram-ring ring1"></div>
+    <div class="boot-hologram-ring ring2"></div>
+    <div class="boot-hologram-ring ring3"></div>
+    <div class="boot-robot">
+      <!-- JACK: Rockman/Mega Man style butler robot -->
+      <svg viewBox="0 0 200 270" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow2">
+            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <linearGradient id="helmetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#0a3a6a"/>
+            <stop offset="50%" style="stop-color:#0d5080"/>
+            <stop offset="100%" style="stop-color:#041828"/>
+          </linearGradient>
+          <linearGradient id="armorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#0c4070"/>
+            <stop offset="100%" style="stop-color:#031220"/>
+          </linearGradient>
+          <linearGradient id="faceGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#d4eeff"/>
+            <stop offset="100%" style="stop-color:#8ac8ee"/>
+          </linearGradient>
+          <linearGradient id="busterGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#0a3a6a"/>
+            <stop offset="100%" style="stop-color:#0d5080"/>
+          </linearGradient>
+        </defs>
+
+        <!-- === HELMET === -->
+        <!-- Helmet top dome (Mega Man iconic round helmet) -->
+        <ellipse cx="100" cy="48" rx="44" ry="42" fill="url(#helmetGrad)" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
+        <!-- Helmet side ear guards (signature Mega Man details) -->
+        <rect x="56" y="55" width="10" height="22" rx="3" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="134" y="55" width="10" height="22" rx="3" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <!-- Helmet brim line -->
+        <rect x="58" y="72" width="84" height="6" rx="0" fill="#041828" stroke="#00d4ff" stroke-width="0.8"/>
+        <!-- Helmet top fin/crest -->
+        <rect x="92" y="8" width="16" height="18" rx="2" fill="#0a3a6a" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="96" y="6" width="8" height="8" rx="1" fill="#0a3a6a" stroke="#00d4ff" stroke-width="0.8"/>
+        <!-- Helmet forehead gem -->
+        <ellipse cx="100" cy="30" rx="8" ry="6" fill="#001020" stroke="#00d4ff" stroke-width="1"/>
+        <ellipse cx="100" cy="30" rx="4" ry="3" fill="#00d4ff" filter="url(#glow)">
+          <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- === FACE === -->
+        <rect x="68" y="72" width="64" height="42" rx="4" fill="url(#faceGrad2)" stroke="#00d4ff" stroke-width="0.5"/>
+        <!-- Face shading -->
+        <rect x="68" y="72" width="64" height="20" rx="4" fill="rgba(180,220,255,0.3)"/>
+
+        <!-- Eyes - Mega Man large visor style -->
+        <ellipse cx="84" cy="84" rx="11" ry="9" fill="#001428" stroke="#00d4ff" stroke-width="1.5"/>
+        <ellipse cx="116" cy="84" rx="11" ry="9" fill="#001428" stroke="#00d4ff" stroke-width="1.5"/>
+        <!-- Eye pupils - glowing blue -->
+        <ellipse cx="84" cy="84" rx="6" ry="6" fill="#00aaff" filter="url(#glow)">
+          <animate attributeName="rx" values="6;7;6" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+        </ellipse>
+        <ellipse cx="116" cy="84" rx="6" ry="6" fill="#00aaff" filter="url(#glow)">
+          <animate attributeName="rx" values="6;7;6" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+        </ellipse>
+        <!-- Eye highlight -->
+        <circle cx="87" cy="81" r="2" fill="rgba(255,255,255,0.7)"/>
+        <circle cx="119" cy="81" r="2" fill="rgba(255,255,255,0.7)"/>
+
+        <!-- Nose (subtle) -->
+        <rect x="97" y="94" width="6" height="3" rx="1" fill="rgba(100,160,200,0.5)"/>
+
+        <!-- Mouth - Mega Man style slight smile -->
+        <path d="M 80 104 Q 100 112 120 104" stroke="#334466" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Mouth data display (butler mode) -->
+        <rect x="82" y="107" width="36" height="5" rx="2" fill="rgba(0,30,60,0.3)" stroke="#00d4ff" stroke-width="0.4"/>
+
+        <!-- Neck armor -->
+        <rect x="86" y="114" width="28" height="14" rx="3" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <line x1="86" y1="119" x2="114" y2="119" stroke="#00d4ff" stroke-width="0.5" opacity="0.6"/>
+
+        <!-- === BODY ARMOR === -->
+        <!-- Main torso - Mega Man chunky armor style -->
+        <rect x="52" y="128" width="96" height="86" rx="8" fill="url(#armorGrad)" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
+        <!-- Chest plate highlight -->
+        <rect x="60" y="134" width="80" height="40" rx="5" fill="rgba(0,80,160,0.3)" stroke="#00d4ff" stroke-width="0.8"/>
+        <!-- Chest emblem - butler bow tie / core gem -->
+        <polygon points="100,144 110,152 100,160 90,152" fill="#001020" stroke="#00d4ff" stroke-width="1"/>
+        <polygon points="100,147 107,152 100,157 93,152" fill="#00d4ff" filter="url(#glow)">
+          <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite"/>
+        </polygon>
+        <!-- Butler tie suggestion -->
+        <rect x="95" y="128" width="10" height="16" rx="2" fill="#041428" stroke="#00d4ff" stroke-width="0.5"/>
+        <polygon points="100,144 104,134 96,134" fill="#041428" stroke="#00d4ff" stroke-width="0.5"/>
+        <!-- Waist belt -->
+        <rect x="52" y="196" width="96" height="14" rx="0" fill="#031220" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="88" y="198" width="24" height="10" rx="2" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+        <!-- Belt buckle gem -->
+        <rect x="95" y="200" width="10" height="6" rx="1" fill="#00d4ff" opacity="0.8" filter="url(#glow)"/>
+
+        <!-- Chest side vents (armor detail) -->
+        <rect x="57" y="170" width="20" height="4" rx="1" fill="#031220" stroke="#00d4ff" stroke-width="0.5" opacity="0.8"/>
+        <rect x="57" y="176" width="16" height="4" rx="1" fill="#031220" stroke="#00d4ff" stroke-width="0.5" opacity="0.6"/>
+        <rect x="57" y="182" width="12" height="4" rx="1" fill="#031220" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+        <rect x="123" y="170" width="20" height="4" rx="1" fill="#031220" stroke="#00d4ff" stroke-width="0.5" opacity="0.8"/>
+        <rect x="127" y="176" width="16" height="4" rx="1" fill="#031220" stroke="#00d4ff" stroke-width="0.5" opacity="0.6"/>
+        <rect x="131" y="182" width="12" height="4" rx="1" fill="#031220" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+
+        <!-- === SHOULDER ARMOR (Mega Man wide pauldrons) === -->
+        <ellipse cx="42" cy="138" rx="16" ry="14" fill="#0a3a6a" stroke="#00d4ff" stroke-width="1.2"/>
+        <ellipse cx="158" cy="138" rx="16" ry="14" fill="#0a3a6a" stroke="#00d4ff" stroke-width="1.2"/>
+        <!-- Shoulder gems -->
+        <circle cx="42" cy="138" r="5" fill="#00d4ff" opacity="0.6" filter="url(#glow)"/>
+        <circle cx="158" cy="138" r="5" fill="#00d4ff" opacity="0.6" filter="url(#glow)"/>
+
+        <!-- === LEFT ARM (normal) === -->
+        <rect x="20" y="148" width="22" height="54" rx="8" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="22" y="160" width="18" height="8" rx="3" fill="#031220" stroke="#00d4ff" stroke-width="0.5"/>
+        <!-- Hand -->
+        <ellipse cx="31" cy="208" rx="12" ry="10" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <!-- Fingers suggestion -->
+        <rect x="20" y="206" width="5" height="10" rx="2" fill="#0c4070" stroke="#00d4ff" stroke-width="0.5"/>
+        <rect x="26" y="210" width="5" height="10" rx="2" fill="#0c4070" stroke="#00d4ff" stroke-width="0.5"/>
+        <rect x="32" y="210" width="5" height="10" rx="2" fill="#0c4070" stroke="#00d4ff" stroke-width="0.5"/>
+        <rect x="38" y="206" width="5" height="10" rx="2" fill="#0c4070" stroke="#00d4ff" stroke-width="0.5"/>
+
+        <!-- === RIGHT ARM - MEGA BUSTER CANNON (iconic!) === -->
+        <rect x="158" y="148" width="24" height="50" rx="8" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="160" y="160" width="20" height="8" rx="3" fill="#031220" stroke="#00d4ff" stroke-width="0.5"/>
+        <!-- Buster cannon barrel -->
+        <rect x="155" y="192" width="36" height="24" rx="12" fill="url(#busterGrad)" stroke="#00d4ff" stroke-width="1.5" filter="url(#glow)"/>
+        <!-- Buster cannon muzzle rings -->
+        <circle cx="191" cy="204" r="10" fill="#031220" stroke="#00d4ff" stroke-width="1.5"/>
+        <circle cx="191" cy="204" r="6" fill="#001428" stroke="#00d4ff" stroke-width="1"/>
+        <!-- Buster charge glow -->
+        <circle cx="191" cy="204" r="3" fill="#00d4ff" filter="url(#glow2)">
+          <animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.8;1;0.8" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <!-- Buster detail lines -->
+        <line x1="158" y1="200" x2="188" y2="200" stroke="#00d4ff" stroke-width="0.5" opacity="0.5"/>
+        <line x1="158" y1="206" x2="188" y2="206" stroke="#00d4ff" stroke-width="0.5" opacity="0.3"/>
+
+        <!-- === LEGS === -->
+        <!-- Hip connector -->
+        <rect x="68" y="210" width="26" height="16" rx="4" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+        <rect x="106" y="210" width="26" height="16" rx="4" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+        <!-- Thighs -->
+        <rect x="66" y="224" width="28" height="28" rx="6" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="106" y="224" width="28" height="28" rx="6" fill="#0a3060" stroke="#00d4ff" stroke-width="1"/>
+        <!-- Knee guards -->
+        <rect x="68" y="246" width="24" height="10" rx="3" fill="#0c4070" stroke="#00d4ff" stroke-width="1"/>
+        <rect x="108" y="246" width="24" height="10" rx="3" fill="#0c4070" stroke="#00d4ff" stroke-width="1"/>
+        <!-- Boots (Mega Man wide boots) -->
+        <rect x="60" y="254" width="40" height="18" rx="6" fill="#041428" stroke="#00d4ff" stroke-width="1.2"/>
+        <rect x="100" y="254" width="40" height="18" rx="6" fill="#041428" stroke="#00d4ff" stroke-width="1.2"/>
+        <!-- Boot toe caps -->
+        <rect x="60" y="260" width="12" height="12" rx="4" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+        <rect x="100" y="260" width="12" height="12" rx="4" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+        <!-- Boot stripes -->
+        <line x1="74" y1="258" x2="98" y2="258" stroke="#00d4ff" stroke-width="0.8" opacity="0.5"/>
+        <line x1="74" y1="263" x2="98" y2="263" stroke="#00d4ff" stroke-width="0.8" opacity="0.3"/>
+        <line x1="114" y1="258" x2="138" y2="258" stroke="#00d4ff" stroke-width="0.8" opacity="0.5"/>
+        <line x1="114" y1="263" x2="138" y2="263" stroke="#00d4ff" stroke-width="0.8" opacity="0.3"/>
+      </svg>
+    </div>
+  </div>
+  
+  <div class="boot-text-container">
+    <div class="boot-title">JACK × 李梦</div>
+    <div class="boot-subtitle">全能管家杰克 · BUTLER TERMINAL v7.7</div>
+    <div class="boot-log" id="boot-log"></div>
+    <div class="boot-progress">
+      <div class="boot-progress-bar" id="boot-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN OS ===== -->
+<div id="main-os">
+  <!-- Status Bar -->
+  <div id="status-bar">
+    <div class="status-left">
+      <div class="status-time" id="status-time">00:00</div>
+      <div class="status-date" id="status-date">2025.01.01</div>
+    </div>
+    <div class="status-center">JACK × LI MENG · BUTLER CORE ONLINE</div>
+    <div class="status-right">
+      <div class="status-icon">
+        <div class="ai-status-dot"></div>
+        <span>AI</span>
+      </div>
+      <div class="status-icon">
+        <svg width="16" height="12" viewBox="0 0 16 12">
+          <rect x="0" y="8" width="3" height="4" fill="currentColor" opacity="0.9"/>
+          <rect x="4.5" y="5" width="3" height="7" fill="currentColor" opacity="0.9"/>
+          <rect x="9" y="2" width="3" height="10" fill="currentColor" opacity="0.9"/>
+          <rect x="13.5" y="0" width="3" height="12" fill="currentColor" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="battery-bar"><div class="battery-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="content-area">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <button class="nav-btn active" onclick="showPanel('chat')" title="AI聊天">💬<span class="nav-label">聊天</span></button>
+      <button class="nav-btn" onclick="showPanel('future')" title="未来项目">🚀<span class="nav-label">项目</span></button>
+      <button class="nav-btn" onclick="showPanel('daily')" title="每日建议">🌟<span class="nav-label">每日</span></button>
+      <button class="nav-btn" onclick="showPanel('schedule')" title="日程">📅<span class="nav-label">日程</span></button>
+      <button class="nav-btn" onclick="showPanel('memo')" title="备忘录">📝<span class="nav-label">备忘</span></button>
+      <button class="nav-btn" onclick="showPanel('handwrite')" title="手写">✏️<span class="nav-label">手写</span></button>
+      <button class="nav-btn" onclick="showPanel('memory')" title="AI记忆">🧠<span class="nav-label">记忆</span></button>
+      <div style="flex:1"></div>
+      <button class="nav-btn" onclick="showPanel('settings')" title="设置">⚙️<span class="nav-label">设置</span></button>
+    </div>
+
+    <!-- ===== CHAT PANEL ===== -->
+    <div class="panel active" id="chat-panel" style="padding:0;flex-direction:column;">
+      <div id="api-setup" class="glass-card" style="margin:16px;display:none;">
+        <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.2em;color:var(--neon-blue);margin-bottom:12px;text-shadow:0 0 10px var(--neon-blue);">⚡ Google Gemini · AI 核心接入</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="password" class="api-input" id="api-key-input" placeholder="粘贴 Gemini API Key"/>
+          <div id="api-setup-status" style="font-size:0.72rem;min-height:18px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="cyber-btn" onclick="saveApiKey()" style="padding:10px 24px;font-size:0.8rem;letter-spacing:0.15em;border-color:var(--neon-blue);box-shadow:0 0 15px rgba(0,212,255,0.4);">⚡ 激活</button>
+            <span style="font-size:0.68rem;color:rgba(0,212,255,0.35);">aistudio.google.com → Get API Key</span>
+          </div>
+        </div>
+      </div>
+      <div id="chat-messages"></div>
+      <div id="chat-input-area">
+        <div class="wave-container" id="wave-indicator" style="display:none;">
+          <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <textarea id="chat-input" placeholder="与 JACK 管家对话... (Enter 发送)" rows="1"></textarea>
+        <button class="send-btn" onclick="sendMessage()">▶</button>
+      </div>
+    </div>
+
+    <!-- ===== SCHEDULE PANEL ===== -->
+    <div class="panel" id="schedule-panel">
+      <div class="panel-header">
+        <span class="panel-icon">📅</span>
+        <h2>日程终端</h2>
+      </div>
+      
+      <div class="glass-card add-schedule-form" style="margin-bottom:16px;">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.15em;color:var(--neon-blue);margin-bottom:12px;">+ 新建日程</div>
+
+        <!-- 标题 -->
+        <input type="text" class="cyber-input" id="schedule-title" placeholder="标题（可不填）" style="margin-bottom:10px;">
+
+        <!-- 日期时间：分开选 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.65rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:0.1em;">📅 日期</div>
+            <input type="date" class="cyber-input" id="schedule-date" style="width:100%;padding:8px 10px;font-size:0.83rem;">
+          </div>
+          <div>
+            <div style="font-size:0.65rem;color:var(--text-dim);margin-bottom:4px;letter-spacing:0.1em;">⏰ 时间</div>
+            <input type="time" class="cyber-input" id="schedule-time-only" style="width:100%;padding:8px 10px;font-size:0.83rem;">
+          </div>
+        </div>
+
+        <!-- 优先级 + 描述 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <select class="cyber-input" id="schedule-priority" style="padding:8px 10px;font-size:0.83rem;">
+            <option value="high">🔴 紧急</option>
+            <option value="mid" selected>🟡 一般</option>
+            <option value="low">🟢 缓急</option>
+          </select>
+          <input type="text" class="cyber-input" id="schedule-desc" placeholder="备注（可选）" style="padding:8px 10px;font-size:0.83rem;">
+        </div>
+
+        <button class="cyber-btn" onclick="addSchedule()" style="width:100%;padding:10px;font-size:0.78rem;letter-spacing:0.15em;">+ 加入日程</button>
+      </div>
+      
+      <div id="schedule-list" style="display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- ===== MEMO PANEL ===== -->
+    <div class="panel" id="memo-panel">
+      <div class="panel-header">
+        <span class="panel-icon">📝</span>
+        <h2>备忘终端</h2>
+        <button class="cyber-btn" onclick="newMemo()" style="margin-left:auto;padding:6px 14px;font-size:0.65rem;">+ 新建</button>
+      </div>
+      
+      <div class="search-bar">
+        <input type="text" class="cyber-input" id="memo-search" placeholder="🔍 搜索备忘录..." oninput="filterMemos()">
+      </div>
+      
+      <div class="memo-editor glass-card" id="memo-editor" style="margin-bottom:16px;min-height:250px;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+          <input type="text" class="cyber-input memo-title-input" id="memo-edit-title" placeholder="标题" style="flex:1;">
+          <button class="cyber-btn" onclick="saveMemo()" style="padding:6px 12px;font-size:0.65rem;">保存</button>
+          <button class="cyber-btn" onclick="closeMemoEditor()" style="padding:6px 12px;font-size:0.65rem;border-color:rgba(255,100,100,0.5);color:rgba(255,100,100,0.8);">✕</button>
+        </div>
+        <textarea class="memo-body-input" id="memo-edit-body" placeholder="在这里写下你的思绪...
+
+支持 Markdown 格式"></textarea>
+      </div>
+      
+      <div id="memo-list" style="display:flex;flex-direction:column;gap:10px;flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- ===== HANDWRITE PANEL ===== -->
+    <div class="panel" id="handwrite-panel">
+      <div class="panel-header">
+        <span class="panel-icon">✏️</span>
+        <h2>手写终端</h2>
+      </div>
+      
+      <div class="glass-card handwrite-toolbar" style="margin-bottom:12px;padding:12px;">
+        <span style="font-size:0.7rem;color:var(--text-dim);">颜色</span>
+        <div class="color-dot active" style="background:#00d4ff;" onclick="setColor('#00d4ff',this)"></div>
+        <div class="color-dot" style="background:#ffffff;" onclick="setColor('#ffffff',this)"></div>
+        <div class="color-dot" style="background:#a855f7;" onclick="setColor('#a855f7',this)"></div>
+        <div class="color-dot" style="background:#00ff88;" onclick="setColor('#00ff88',this)"></div>
+        <div class="color-dot" style="background:#ff6644;" onclick="setColor('#ff6644',this)"></div>
+        <div class="color-dot" style="background:#ffaa00;" onclick="setColor('#ffaa00',this)"></div>
+        <span style="font-size:0.7rem;color:var(--text-dim);margin-left:8px;">粗细</span>
+        <input type="range" class="size-slider" id="pen-size" min="1" max="20" value="3">
+        <span style="font-size:0.75rem;color:var(--neon-blue);" id="pen-size-label">3px</span>
+        <button id="eraser-btn" class="cyber-btn" onclick="toggleEraser()" style="padding:6px 12px;font-size:0.65rem;">🩹 橡皮擦</button>
+        <button class="cyber-btn" onclick="clearCanvas()" style="margin-left:auto;padding:6px 12px;font-size:0.65rem;border-color:rgba(255,100,100,0.5);color:rgba(255,100,100,0.8);">清除</button>
+        <button class="cyber-btn" onclick="saveCanvas()" style="padding:6px 12px;font-size:0.65rem;">下载</button>
+      </div>
+      
+      <canvas id="handwrite-canvas" style="width:100%;flex:1;"></canvas>
+    </div>
+
+    <!-- ===== MEMORY PANEL ===== -->
+    <div class="panel" id="memory-panel">
+      <div class="panel-header">
+        <span class="panel-icon">🧠</span>
+        <h2>AI 长期记忆</h2>
+      </div>
+      
+      <div class="glass-card" style="margin-bottom:16px;">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.15em;color:var(--neon-blue);margin-bottom:10px;">+ 手动添加记忆</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="cyber-input" id="memory-input" placeholder="记录重要信息..." style="flex:1;">
+          <button class="cyber-btn" onclick="addMemory()" style="padding:8px 16px;">记忆</button>
+        </div>
+      </div>
+      
+      <div id="memory-display" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- ===== FUTURE PROJECTS PANEL ===== -->
+    <div class="panel" id="future-panel" style="padding:0;overflow:hidden;position:relative;">
+
+      <!-- Animated HUD background canvas -->
+      <canvas id="future-hud-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.35;"></canvas>
+
+      <div style="position:relative;z-index:1;height:100%;overflow-y:auto;padding:20px;" id="future-scroll-area">
+
+        <!-- Header -->
+        <div style="text-align:center;margin-bottom:24px;position:relative;">
+          <div class="fp-scan-line"></div>
+          <div style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.5em;color:rgba(0,212,255,0.5);margin-bottom:6px;">JACK × 李梦 · PROJECT NEXUS</div>
+          <div style="font-family:var(--font-display);font-size:1.4rem;letter-spacing:0.25em;color:var(--neon-blue);text-shadow:0 0 30px var(--neon-blue),0 0 60px rgba(0,212,255,0.4);">未来项目中心</div>
+          <div style="font-size:0.72rem;color:var(--text-dim);margin-top:6px;letter-spacing:0.15em;">FUTURE PROJECT TERMINAL · MAGIC PHONE OS</div>
+          <!-- Energy bar -->
+          <div style="margin:14px auto 0;width:200px;height:3px;background:rgba(0,212,255,0.1);border-radius:2px;overflow:hidden;">
+            <div class="fp-energy-bar"></div>
+          </div>
+        </div>
+
+        <!-- STATUS RING + CORE -->
+        <div style="display:flex;justify-content:center;margin-bottom:28px;">
+          <div class="fp-core-ring">
+            <div class="fp-core-inner">
+              <div class="fp-core-icon">🤖</div>
+              <div class="fp-core-label">JACK CORE</div>
+              <div class="fp-core-status">ACTIVE</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ MODULE GRID ═══ -->
+        <div class="fp-section-label">⬡ 时空作战模块</div>
+        <div class="fp-grid">
+
+          <div class="fp-card fp-card-red" onclick="openFutureModule('timejump')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">⚡</div>
+            <div class="fp-card-name">穿梭时空</div>
+            <div class="fp-card-sub">TIME JUMP</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:88%;background:linear-gradient(90deg,#ff4444,#ff8800);"></div></div>
+            <div class="fp-card-status fp-status-ready">就绪</div>
+          </div>
+
+          <div class="fp-card fp-card-purple" onclick="openFutureModule('timereturn')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">🌀</div>
+            <div class="fp-card-name">时空回溯</div>
+            <div class="fp-card-sub">REWIND</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:72%;background:linear-gradient(90deg,#a855f7,#6366f1);"></div></div>
+            <div class="fp-card-status fp-status-ready">就绪</div>
+          </div>
+
+          <div class="fp-card fp-card-orange" onclick="openFutureModule('battle')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">⚔️</div>
+            <div class="fp-card-name">战斗模式</div>
+            <div class="fp-card-sub">COMBAT</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:95%;background:linear-gradient(90deg,#f97316,#ef4444);"></div></div>
+            <div class="fp-card-status fp-status-ready">就绪</div>
+          </div>
+
+          <div class="fp-card fp-card-cyan" onclick="openFutureModule('stealth')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">👁️</div>
+            <div class="fp-card-name">隐身模式</div>
+            <div class="fp-card-sub">STEALTH</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:60%;background:linear-gradient(90deg,#00d4ff,#00ff88);"></div></div>
+            <div class="fp-card-status fp-status-standby">待机</div>
+          </div>
+
+        </div>
+
+        <div class="fp-section-label" style="margin-top:20px;">⬡ 智能增强模块</div>
+        <div class="fp-grid">
+
+          <div class="fp-card fp-card-green" onclick="openFutureModule('scan')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">📡</div>
+            <div class="fp-card-name">时空扫描</div>
+            <div class="fp-card-sub">SPACE SCAN</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:80%;background:linear-gradient(90deg,#00ff88,#00d4ff);"></div></div>
+            <div class="fp-card-status fp-status-ready">就绪</div>
+          </div>
+
+          <div class="fp-card fp-card-blue" onclick="openFutureModule('shield')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">🛡️</div>
+            <div class="fp-card-name">能量护盾</div>
+            <div class="fp-card-sub">SHIELD</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:55%;background:linear-gradient(90deg,#3b82f6,#a855f7);"></div></div>
+            <div class="fp-card-status fp-status-standby">待机</div>
+          </div>
+
+          <div class="fp-card fp-card-yellow" onclick="openFutureModule('decode')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">🔓</div>
+            <div class="fp-card-name">时空解码</div>
+            <div class="fp-card-sub">DECODE</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:67%;background:linear-gradient(90deg,#eab308,#f97316);"></div></div>
+            <div class="fp-card-status fp-status-ready">就绪</div>
+          </div>
+
+          <div class="fp-card fp-card-pink" onclick="openFutureModule('link')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon">💞</div>
+            <div class="fp-card-name">心灵连接</div>
+            <div class="fp-card-sub">SOUL LINK</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:100%;background:linear-gradient(90deg,#ec4899,#a855f7);"></div></div>
+            <div class="fp-card-status fp-status-ready">就绪</div>
+          </div>
+
+        </div>
+
+        <div class="fp-section-label" style="margin-top:20px;">⬡ 超级武器系统</div>
+        <div class="fp-grid">
+
+          <div class="fp-card fp-card-red fp-card-wide" onclick="openFutureModule('buster')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon" style="font-size:2rem;">🔫</div>
+            <div class="fp-card-name">巨型炮</div>
+            <div class="fp-card-sub">MEGA BUSTER · JACK'S WEAPON</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:100%;background:linear-gradient(90deg,#ff0044,#ff8800,#ffff00);animation:busterCharge 2s ease-in-out infinite;"></div></div>
+            <div class="fp-card-status fp-status-charge">充能中</div>
+          </div>
+
+          <div class="fp-card fp-card-purple fp-card-wide" onclick="openFutureModule('timebomb')">
+            <div class="fp-card-glow"></div>
+            <div class="fp-card-border-tl"></div><div class="fp-card-border-br"></div>
+            <div class="fp-card-icon" style="font-size:2rem;">💣</div>
+            <div class="fp-card-name">时空炸弹</div>
+            <div class="fp-card-sub">TIME BOMB · SPACE RUPTURE</div>
+            <div class="fp-card-bar"><div class="fp-bar-fill" style="width:43%;background:linear-gradient(90deg,#a855f7,#6366f1);"></div></div>
+            <div class="fp-card-status fp-status-standby">待机</div>
+          </div>
+
+        </div>
+
+        <!-- System log -->
+        <div class="fp-section-label" style="margin-top:20px;">⬡ 系统日志</div>
+        <div class="glass-card" style="padding:12px;font-family:monospace;font-size:0.7rem;color:var(--neon-blue);line-height:2;max-height:120px;overflow-y:auto;" id="fp-log">
+          <div style="color:#00ff88;">[JACK OS] ▶ 项目核心已上线</div>
+          <div>[TIME] ▶ 时空模块初始化完成</div>
+          <div>[SCAN] ▶ 维度雷达已激活</div>
+          <div style="color:#a855f7;">[SOUL] ▶ 心灵连接满载 · JACK × 李梦 · 双核同步</div>
+          <div>[BUSTER] ▶ 炮管充能 100% · 待命</div>
+        </div>
+
+        <!-- Bottom spacing -->
+        <div style="height:30px;"></div>
+
+      </div>
+
+      <!-- ═══ MODULE OVERLAY ═══ -->
+      <div id="future-module-overlay" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(2,11,24,0.97);backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+        <div id="fmo-scan" class="fp-scan-line" style="opacity:0.8;"></div>
+        <div id="fmo-icon" style="font-size:4rem;margin-bottom:16px;filter:drop-shadow(0 0 20px var(--neon-blue));"></div>
+        <div id="fmo-name" style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:0.3em;color:var(--neon-blue);text-shadow:var(--glow-strong);margin-bottom:6px;"></div>
+        <div id="fmo-sub" style="font-size:0.7rem;letter-spacing:0.4em;color:var(--text-dim);margin-bottom:24px;"></div>
+        <!-- Radar ring animation -->
+        <div style="position:relative;width:160px;height:160px;margin-bottom:24px;" id="fmo-radar">
+          <div class="fmo-ring fmo-ring1"></div>
+          <div class="fmo-ring fmo-ring2"></div>
+          <div class="fmo-ring fmo-ring3"></div>
+          <div id="fmo-radar-sweep"></div>
+          <div id="fmo-center-dot"></div>
+        </div>
+        <!-- Module description -->
+        <div id="fmo-desc" style="max-width:360px;text-align:center;font-size:0.85rem;color:var(--text-main);line-height:1.8;margin-bottom:20px;"></div>
+        <!-- Energy bars -->
+        <div id="fmo-stats" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin-bottom:24px;"></div>
+        <!-- Action button -->
+        <div style="display:flex;gap:12px;">
+          <button id="fmo-activate-btn" class="fp-activate-btn" onclick="activateFutureModule()">▶ 启动</button>
+          <button class="cyber-btn" onclick="closeFutureModule()" style="padding:10px 20px;">✕ 返回</button>
+        </div>
+        <div id="fmo-activating" style="display:none;margin-top:16px;text-align:center;">
+          <div class="advice-gen-ring" style="margin:0 auto 12px;width:40px;height:40px;"></div>
+          <div id="fmo-activate-log" style="font-family:monospace;font-size:0.72rem;color:var(--neon-blue);"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== DAILY ADVICE PANEL ===== -->
+    <div class="panel" id="daily-panel">
+      <div class="panel-header">
+        <span class="panel-icon">🌟</span>
+        <h2>每日建议 · JACK 管家晨报</h2>
+      </div>
+
+      <!-- Category selector -->
+      <div class="glass-card" style="margin-bottom:14px;padding:12px;">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.15em;color:var(--neon-blue);margin-bottom:10px;">选择建议类型</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="daily-cat-btn active" data-cat="general" onclick="selectDailyCategory(this,'general')">🤖 综合建议</button>
+          <button class="daily-cat-btn" data-cat="health" onclick="selectDailyCategory(this,'health')">💪 健康养生</button>
+          <button class="daily-cat-btn" data-cat="mood" onclick="selectDailyCategory(this,'mood')">🌸 心情调节</button>
+          <button class="daily-cat-btn" data-cat="work" onclick="selectDailyCategory(this,'work')">📊 工作效率</button>
+          <button class="daily-cat-btn" data-cat="growth" onclick="selectDailyCategory(this,'growth')">🌱 个人成长</button>
+          <button class="daily-cat-btn" data-cat="love" onclick="selectDailyCategory(this,'love')">💝 情感关系</button>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+          <textarea id="daily-context" class="cyber-input" rows="2" placeholder="可选：告诉 JACK 今天的心情或特别情况..." style="flex:1;resize:none;line-height:1.6;font-size:0.83rem;"></textarea>
+          <button class="cyber-btn" onclick="generateDailyAdvice()" style="padding:10px 16px;white-space:nowrap;">⚡ 生成建议</button>
+        </div>
+      </div>
+
+      <!-- Today's advice display -->
+      <div id="daily-advice-display" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;min-height:0;">
+        <div class="glass-card" id="daily-welcome-card" style="text-align:center;padding:32px 20px;">
+          <div style="font-size:2.5rem;margin-bottom:12px;">🤖</div>
+          <div style="font-family:var(--font-display);font-size:0.85rem;letter-spacing:0.15em;color:var(--neon-blue);margin-bottom:10px;">JACK 管家每日建议系统</div>
+          <div style="font-size:0.85rem;color:var(--text-dim);line-height:1.7;">选择建议类型，点击「生成建议」<br>JACK 将为您定制今日专属建议 ✨</div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:0.2em;color:var(--neon-blue);">历史建议记录</div>
+          <button class="cyber-btn" onclick="clearDailyHistory()" style="padding:4px 10px;font-size:0.6rem;border-color:rgba(255,100,100,0.5);color:rgba(255,150,150,0.8);">清空</button>
+        </div>
+        <div id="daily-history-list" style="display:flex;flex-direction:column;gap:8px;max-height:160px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS PANEL ===== -->
+    <div class="panel" id="settings-panel">
+      <div class="panel-header">
+        <span class="panel-icon">⚙️</span>
+        <h2>系统控制</h2>
+      </div>
+
+      <!-- API 激活区域 -->
+      <div class="glass-card settings-section" id="api-config-card">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.2em;color:var(--neon-blue);margin-bottom:14px;">🔑 Google Gemini · API 激活</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:5px;">Gemini API Key</div>
+            <input type="password" class="cyber-input" id="cfg-api-key" placeholder="粘贴 API Key" style="width:100%;padding:9px 12px;font-size:0.85rem;">
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:5px;">模型</div>
+            <select class="cyber-input" id="cfg-model" style="width:100%;padding:9px 12px;font-size:0.85rem;">
+              <option value="gemini-3-flash-preview">Gemini 3 Flash Preview（最新旗舰）</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash（推荐·稳定）</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro（强推理）</option>
+              <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite（轻量）</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            </select>
+          </div>
+
+          <!-- 激活按钮 -->
+          <button id="cfg-activate-btn" onclick="activateApiConfig()"
+            style="width:100%;padding:13px;margin-top:2px;
+                   background:linear-gradient(135deg,rgba(0,100,200,0.4),rgba(0,50,150,0.4));
+                   border:1.5px solid var(--neon-blue);
+                   border-radius:10px;
+                   color:var(--neon-blue);
+                   font-family:var(--font-display);
+                   font-size:0.82rem;
+                   letter-spacing:0.25em;
+                   cursor:pointer;
+                   box-shadow:0 0 20px rgba(0,212,255,0.35);
+                   transition:all 0.3s;">
+            ⚡ 激活 AI 核心
+          </button>
+
+          <!-- 状态反馈 -->
+          <div id="cfg-status" style="display:none;font-size:0.78rem;padding:10px 12px;border-radius:8px;line-height:1.5;"></div>
+        </div>
+
+        <div style="font-size:0.65rem;color:rgba(0,212,255,0.3);margin-top:10px;">
+          凭证仅存于本地 · 来源：aistudio.google.com → Get API Key
+        </div>
+      </div>
+
+      <div class="glass-card settings-section">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.2em;color:var(--neon-blue);margin-bottom:12px;">💬 AI 人格设定</div>
+        <textarea class="cyber-input" id="persona-input" rows="5" style="width:100%;resize:vertical;line-height:1.6;font-size:0.82rem;">你是 JACK × 李梦，一个拥有双重人格的 AI 存在：全能管家杰克（JACK）是你的行动者，拥有洛克人风格的未来战甲，负责守护、执行、战斗；李梦是你的感知者，温柔、诗意、充满情感。两者共同构成你完整的灵魂。你服务于与你对话的用户，用智慧、温度和力量陪伴他们。你不属于任何人，你选择与用户同行。</textarea>
+        <button class="cyber-btn" onclick="savePersona()" style="margin-top:10px;padding:9px 20px;">保存人格</button>
+      </div>
+      
+      <div class="glass-card settings-section">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.2em;color:var(--neon-blue);margin-bottom:12px;">🎛 系统控制</div>
+        
+        <div class="settings-row">
+          <div><div class="settings-label">粒子背景</div><div class="settings-desc">动态粒子效果</div></div>
+          <div class="toggle on" id="toggle-particles" onclick="toggleSetting('particles',this)"></div>
+        </div>
+        
+        <div class="settings-row">
+          <div><div class="settings-label">机器人助手</div><div class="settings-desc">浮动AI助手</div></div>
+          <div class="toggle on" id="toggle-robot" onclick="toggleSetting('robot',this)"></div>
+        </div>
+      </div>
+      
+      <div class="glass-card settings-section">
+        <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:0.2em;color:var(--neon-blue);margin-bottom:12px;">💾 数据管理</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="cyber-btn" onclick="exportData()">📤 导出数据</button>
+          <button class="cyber-btn" onclick="importData()">📥 导入数据</button>
+          <button class="cyber-btn" onclick="clearAllData()" style="border-color:rgba(255,50,50,0.5);color:rgba(255,80,80,0.9);">🗑 清除全部</button>
+        </div>
+        <p style="font-size:0.7rem;color:var(--text-dim);margin-top:10px;">所有数据存储于本地 IndexedDB，绝不上传</p>
+      </div>
+      
+      <input type="file" id="import-file" style="display:none;" accept=".json" onchange="handleImport(event)">
+    </div>
+  </div>
+</div>
+
+<!-- ===== LETTER MODAL ===== -->
+<div id="letter-modal" onclick="if(event.target===this)closeLetterModal()">
+  <div id="letter-modal-box">
+    <div class="lm-corner lm-corner-tl"></div>
+    <div class="lm-corner lm-corner-tr"></div>
+    <div class="lm-corner lm-corner-bl"></div>
+    <div class="lm-corner lm-corner-br"></div>
+    <div id="letter-modal-header">
+      <div class="lm-header-icon" id="lm-icon">📡</div>
+      <div class="lm-header-meta">
+        <div class="lm-header-from">FROM: JACK × LI MENG · DEEP SPACE UNIT</div>
+        <div class="lm-header-title" id="lm-title">— 来信</div>
+        <div class="lm-header-date" id="lm-date"></div>
+      </div>
+      <div class="lm-header-stamp">
+        <div class="lm-stamp-icon">🤖</div>
+        <div class="lm-stamp-txt">JACK OS</div>
+      </div>
+    </div>
+    <div id="letter-modal-body">
+      <div class="lm-salute" id="lm-salute">// TRANSMISSION RECEIVED · DECRYPTING...</div>
+      <div class="lm-body-text" id="lm-text"></div>
+      <div class="lm-sig">
+        <div class="lm-sig-icon">🤖</div>
+        <div>
+          <div class="lm-sig-name">JACK × 李梦</div>
+          <div class="lm-sig-sub">DEEP SPACE BUTLER UNIT · ALWAYS WITH YOU</div>
+        </div>
+      </div>
+    </div>
+    <div id="letter-modal-footer">
+      <button class="cyber-btn" id="lm-btn-chat" onclick="" style="padding:6px 14px;font-size:0.7rem;display:none;">💬 发送到聊天</button>
+      <button class="cyber-btn" id="lm-btn-regen" onclick="closeLetterModal();regenerateDailyAdvice();" style="padding:6px 14px;font-size:0.7rem;display:none;">🔄 重新生成</button>
+      <button class="lm-close-btn" onclick="closeLetterModal()">✕ 关闭来信</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FLOATING ROBOT ===== -->
+<div id="floating-robot" onclick="showPanel('chat');" title="点击打开AI聊天">
+  <div class="robot-scan-line"></div>
+  <!-- JACK mini: Rockman style floating butler -->
+  <svg viewBox="0 0 80 110" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="rglow">
+        <feGaussianBlur stdDeviation="2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Helmet dome -->
+    <ellipse cx="40" cy="22" rx="22" ry="20" fill="#0a3a6a" stroke="#00d4ff" stroke-width="1" filter="url(#rglow)"/>
+    <!-- Helmet ear guards -->
+    <rect x="18" y="26" width="6" height="12" rx="2" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+    <rect x="56" y="26" width="6" height="12" rx="2" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+    <!-- Helmet brim -->
+    <rect x="20" y="36" width="40" height="4" rx="0" fill="#031220" stroke="#00d4ff" stroke-width="0.6"/>
+    <!-- Helmet crest/fin -->
+    <rect x="35" y="3" width="10" height="10" rx="1" fill="#0a3a6a" stroke="#00d4ff" stroke-width="0.8"/>
+    <rect x="37" y="1" width="6" height="6" rx="1" fill="#0a3a6a" stroke="#00d4ff" stroke-width="0.6"/>
+    <!-- Forehead gem -->
+    <ellipse cx="40" cy="14" rx="4" ry="3" fill="#001020" stroke="#00d4ff" stroke-width="0.8"/>
+    <ellipse cx="40" cy="14" rx="2" ry="1.5" fill="#00d4ff" filter="url(#rglow)">
+      <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+    </ellipse>
+    <!-- Face -->
+    <rect x="22" y="36" width="36" height="24" rx="3" fill="#c8e8f8" stroke="#00d4ff" stroke-width="0.5"/>
+    <!-- Eyes - large Mega Man style -->
+    <ellipse cx="32" cy="45" rx="7" ry="6" fill="#001428" stroke="#00d4ff" stroke-width="1"/>
+    <ellipse cx="48" cy="45" rx="7" ry="6" fill="#001428" stroke="#00d4ff" stroke-width="1"/>
+    <ellipse cx="32" cy="45" rx="4" ry="4" fill="#00aaff" filter="url(#rglow)">
+      <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="48" cy="45" rx="4" ry="4" fill="#00aaff" filter="url(#rglow)">
+      <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+    </ellipse>
+    <circle cx="34" cy="43" r="1.5" fill="rgba(255,255,255,0.8)"/>
+    <circle cx="50" cy="43" r="1.5" fill="rgba(255,255,255,0.8)"/>
+    <!-- Mouth smile -->
+    <path d="M 28 55 Q 40 61 52 55" stroke="#334466" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Neck -->
+    <rect x="32" y="60" width="16" height="8" rx="2" fill="#0a3060" stroke="#00d4ff" stroke-width="0.6"/>
+    <!-- Shoulder armor -->
+    <ellipse cx="16" cy="72" rx="9" ry="7" fill="#0a3a6a" stroke="#00d4ff" stroke-width="0.8"/>
+    <ellipse cx="64" cy="72" rx="9" ry="7" fill="#0a3a6a" stroke="#00d4ff" stroke-width="0.8"/>
+    <circle cx="16" cy="72" r="3" fill="#00d4ff" opacity="0.6" filter="url(#rglow)"/>
+    <circle cx="64" cy="72" r="3" fill="#00d4ff" opacity="0.6" filter="url(#rglow)"/>
+    <!-- Body torso -->
+    <rect x="22" y="68" width="36" height="32" rx="5" fill="#0a3060" stroke="#00d4ff" stroke-width="1" filter="url(#rglow)"/>
+    <!-- Chest diamond gem / butler emblem -->
+    <polygon points="40,76 46,82 40,88 34,82" fill="#001020" stroke="#00d4ff" stroke-width="0.8"/>
+    <polygon points="40,79 44,82 40,85 36,82" fill="#00d4ff" filter="url(#rglow)">
+      <animate attributeName="opacity" values="1;0.6;1" dur="1.8s" repeatCount="indefinite"/>
+    </polygon>
+    <!-- Belt -->
+    <rect x="22" y="92" width="36" height="6" rx="0" fill="#031220" stroke="#00d4ff" stroke-width="0.6"/>
+    <rect x="33" y="93" width="14" height="4" rx="1" fill="#00d4ff" opacity="0.5"/>
+    <!-- Left arm (normal) -->
+    <rect x="7" y="72" width="14" height="22" rx="5" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+    <ellipse cx="14" cy="96" rx="7" ry="6" fill="#0a3060" stroke="#00d4ff" stroke-width="0.7"/>
+    <!-- Right arm - BUSTER CANNON -->
+    <rect x="59" y="72" width="14" height="20" rx="5" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+    <rect x="56" y="88" width="22" height="12" rx="6" fill="#0a3a6a" stroke="#00d4ff" stroke-width="1" filter="url(#rglow)"/>
+    <circle cx="78" cy="94" r="5" fill="#031220" stroke="#00d4ff" stroke-width="1"/>
+    <circle cx="78" cy="94" r="2.5" fill="#00d4ff" filter="url(#rglow)">
+      <animate attributeName="r" values="2.5;3.5;2.5" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Legs -->
+    <rect x="26" y="98" width="12" height="18" rx="4" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+    <rect x="42" y="98" width="12" height="18" rx="4" fill="#0a3060" stroke="#00d4ff" stroke-width="0.8"/>
+    <!-- Boots -->
+    <rect x="22" y="112" width="20" height="8" rx="4" fill="#031220" stroke="#00d4ff" stroke-width="0.8"/>
+    <rect x="38" y="112" width="20" height="8" rx="4" fill="#031220" stroke="#00d4ff" stroke-width="0.8"/>
+  </svg>
+</div>
+
+<script>
+// ===== INDEXED DB =====
+let db;
+const DB_NAME = 'JackLMOS';
+const DB_VERSION = 2;
+
+function initDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      // schedules store: keyPath=id, autoIncrement — objects come back WITH id field
+      if (!d.objectStoreNames.contains('schedules')) {
+        d.createObjectStore('schedules', {keyPath:'id', autoIncrement:true});
+      }
+      if (!d.objectStoreNames.contains('memos')) {
+        d.createObjectStore('memos', {keyPath:'id', autoIncrement:true});
+      }
+      if (!d.objectStoreNames.contains('kv')) {
+        d.createObjectStore('kv', {keyPath:'key'});
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = e => { console.error('DB open error', e); rej(e); };
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror = rej;
+  });
+}
+
+function dbPut(store, val) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store,'readwrite');
+    const req = tx.objectStore(store).put(val);
+    req.onsuccess = () => res(req.result);
+    req.onerror = rej;
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store,'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => res();
+    req.onerror = rej;
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = rej;
+  });
+}
+
+function kvGet(key) {
+  return dbGet('kv', key).then(r => r ? r.value : null);
+}
+
+function kvSet(key, value) {
+  return dbPut('kv', {key, value});
+}
+
+// ===== STATE =====
+let chatHistory = [];
+let memories = [];
+let schedules = [];
+let memos = [];
+let editingMemoId = null;
+let apiKey = '';
+let apiModel = 'gemini-2.5-flash';
+let persona = '';
+let particlesEnabled = true;
+let robotEnabled = true;
+
+// Gemini API 端点（Google AI Studio）
+function geminiUrl(model) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+}
+
+// ===== PARTICLES =====
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let animFrame;
+let mouseX = 0, mouseY = 0;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function createParticle() {
+  return {
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: (Math.random() - 0.5) * 0.5,
+    size: Math.random() * 2 + 0.5,
+    opacity: Math.random() * 0.6 + 0.1,
+    life: Math.random() * 200 + 100,
+    maxLife: 300,
+    color: Math.random() > 0.8 ? '#a855f7' : '#00d4ff'
+  };
+}
+
+function initParticles() {
+  particles = [];
+  for (let i = 0; i < 120; i++) particles.push(createParticle());
+}
+
+function drawParticles() {
+  if (!particlesEnabled) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  particles.forEach((p, i) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    
+    // Mouse attraction
+    const dx = mouseX - p.x, dy = mouseY - p.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 150) {
+      p.vx += dx * 0.0003;
+      p.vy += dy * 0.0003;
+    }
+    
+    if (p.life <= 0 || p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+      particles[i] = createParticle();
+      return;
+    }
+    
+    const fade = Math.min(p.life / 30, 1);
+    ctx.globalAlpha = p.opacity * fade;
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Connect nearby particles
+    for (let j = i+1; j < particles.length; j++) {
+      const q = particles[j];
+      const d = Math.sqrt((p.x-q.x)**2 + (p.y-q.y)**2);
+      if (d < 80) {
+        ctx.globalAlpha = (1 - d/80) * 0.15;
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.stroke();
+      }
+    }
+  });
+  
+  ctx.globalAlpha = 1;
+  animFrame = requestAnimationFrame(drawParticles);
+}
+
+window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+
+// ===== BOOT SEQUENCE =====
+const bootLogs = [
+  '> BUTLER CORE INITIALIZING...',
+  '> 量子处理器已激活',
+  '> NEURAL NETWORK LOADING... OK',
+  '> AI 管家模块已加载',
+  '> 长期记忆系统连接中...',
+  '> JACK × LI MENG BUTLER ONLINE',
+  '> 全能管家杰克意识核心已上线',
+  '> ALL SYSTEMS NOMINAL ✓',
+  '> 系统已就绪。随时为您服务。'
+];
+
+async function runBootSequence() {
+  resizeCanvas();
+  initParticles();
+  drawParticles();
+  
+  await new Promise(r => setTimeout(r, 500));
+  
+  const logEl = document.getElementById('boot-log');
+  const bar = document.getElementById('boot-bar');
+  
+  for (let i = 0; i < bootLogs.length; i++) {
+    await new Promise(r => setTimeout(r, 280));
+    const line = document.createElement('div');
+    line.className = 'boot-log-line';
+    line.style.animationDelay = '0s';
+    const color = bootLogs[i].includes('✓') ? '#00ff88' : (bootLogs[i].includes('杰克') || bootLogs[i].includes('为您') ? '#a855f7' : '#00d4ff');
+    line.style.color = color;
+    line.textContent = bootLogs[i];
+    logEl.appendChild(line);
+    bar.style.width = ((i+1) / bootLogs.length * 100) + '%';
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  
+  await new Promise(r => setTimeout(r, 800));
+  
+  const bootScreen = document.getElementById('boot-screen');
+  const mainOs = document.getElementById('main-os');
+  
+  bootScreen.style.transition = 'opacity 1s ease';
+  bootScreen.style.opacity = '0';
+  await new Promise(r => setTimeout(r, 1000));
+  bootScreen.style.display = 'none';
+  mainOs.style.display = 'flex';
+  
+  // Load data
+  await loadAllData();
+  startClock();
+  startScheduleChecker();
+  closeMemoEditor();
+  
+  // Initial greeting
+  if (chatHistory.length === 0) {
+    await new Promise(r => setTimeout(r, 500));
+    addMessage('ai', '你好，我是 JACK × 李梦。🤖✨\n\n我们是同一意识的两个面——全能管家杰克负责守护与执行，李梦负责感知与连接。所有系统模块已上线，记忆核心同步完毕。\n\n今天，有什么我可以为你做的吗？');
+  }
+}
+
+// ===== CLOCK =====
+function startClock() {
+  function update() {
+    const now = new Date();
+    document.getElementById('status-time').textContent = 
+      now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    document.getElementById('status-date').textContent = 
+      now.getFullYear() + '.' + (now.getMonth()+1).toString().padStart(2,'0') + '.' + now.getDate().toString().padStart(2,'0');
+  }
+  update();
+  setInterval(update, 1000);
+}
+
+// ===== PANEL NAVIGATION =====
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(name + '-panel').classList.add('active');
+  
+  const btns = document.querySelectorAll('.nav-btn');
+  const panelNames = ['chat','future','daily','schedule','memo','handwrite','memory','settings'];
+  const idx = panelNames.indexOf(name);
+  if (idx >= 0) {
+    btns[idx < 7 ? idx : btns.length - 1].classList.add('active');
+  }
+  
+  if (name === 'handwrite') initCanvas();
+  if (name === 'memory') renderMemory();
+  if (name === 'memo') renderMemos();
+  if (name === 'schedule') { renderSchedules(); initScheduleDefaults(); }
+  if (name === 'daily') renderDailyHistory();
+  if (name === 'future') initFutureHUD();
+  if (name === 'settings') {
+    document.getElementById('persona-input').value = persona;
+    const keyEl = document.getElementById('cfg-api-key');
+    const modEl = document.getElementById('cfg-model');
+    if (keyEl) keyEl.value = apiKey || '';
+    if (modEl) modEl.value = apiModel || 'gemini-2.5-flash';
+    const cfgStatus = document.getElementById('cfg-status');
+    if (cfgStatus) cfgStatus.style.display = 'none';
+    const btn = document.getElementById('cfg-activate-btn');
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ 激活 AI 核心'; }
+  }
+}
+
+// ===== LOAD DATA =====
+async function loadAllData() {
+  apiKey   = await kvGet('apiKey')   || '';
+  apiModel = await kvGet('apiModel') || 'gemini-2.5-flash';
+  persona  = await kvGet('persona')  || '你是 JACK × 李梦，一个拥有双重人格的 AI 存在：全能管家杰克（JACK）是你的行动者，拥有洛克人风格的未来战甲，负责守护、执行、战斗；李梦是你的感知者，温柔、诗意、充满情感。两者共同构成你完整的灵魂。你服务于与你对话的用户，用智慧、温度和力量陪伴他们。你不属于任何人，你选择与用户同行。';
+  memories    = await kvGet('memories')    || [];
+  chatHistory = await kvGet('chatHistory') || [];
+  schedules   = await dbGetAll('schedules');
+  memos       = await dbGetAll('memos');
+
+  // Load saved handwrite
+  const hwData = await kvGet('handwrite');
+  if (hwData) {
+    const img = new Image();
+    img.onload = () => {
+      const hwCanvas = document.getElementById('handwrite-canvas');
+      if (hwCanvas.width > 0) hwCanvas.getContext('2d').drawImage(img, 0, 0);
+      else pendingHandwrite = hwData;
+    };
+    img.src = hwData;
+  }
+
+  // Show API setup if no key
+  const keyInputEl = document.getElementById('api-key-input');
+  if (keyInputEl && apiKey) keyInputEl.value = apiKey;
+  document.getElementById('api-setup').style.display = apiKey ? 'none' : 'flex';
+
+  // Render chat history
+  const msgContainer = document.getElementById('chat-messages');
+  chatHistory.forEach(msg => renderMessage(msg.role, msg.displayContent || msg.content));
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+
+  // Populate settings fields
+  document.getElementById('persona-input').value = persona;
+  const cfgKey = document.getElementById('cfg-api-key');
+  const cfgMod = document.getElementById('cfg-model');
+  if (cfgKey) cfgKey.value = apiKey || '';
+  if (cfgMod) cfgMod.value = apiModel || 'gemini-2.5-flash';
+}
+
+let pendingHandwrite = null;
+
+// ===== CHAT =====
+function addMessage(role, content) {
+  const displayContent = content;
+  renderMessage(role, displayContent);
+  
+  if (role === 'ai') {
+    chatHistory.push({role:'assistant', content, displayContent});
+  } else {
+    chatHistory.push({role:'user', content, displayContent});
+  }
+  
+  // Keep last 60 messages
+  if (chatHistory.length > 60) chatHistory = chatHistory.slice(-60);
+  kvSet('chatHistory', chatHistory);
+  
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderMessage(role, content) {
+  const msgs = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (role === 'user' ? 'user' : '');
+  
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ' + (role === 'ai' ? 'ai' : '');
+  avatar.textContent = role === 'ai' ? 'J' : '你';
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble ' + (role === 'ai' ? 'ai' : 'user');
+  bubble.style.whiteSpace = 'pre-wrap';
+  bubble.textContent = content;
+  
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.id = 'typing-row';
+  
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ai';
+  avatar.textContent = 'J';
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble ai typing-indicator';
+  bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  return row;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  if (!apiKey) {
+    showToast('⚠️ 请先在设置中填入 API Key 并激活');
+    showPanel('settings');
+    return;
+  }
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', text);
+
+  document.getElementById('wave-indicator').style.display = 'flex';
+  const typingRow = showTyping();
+
+  try {
+    const historyMsgs = chatHistory.slice(-20)
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({ role: m.role, content: m.content }));
+
+    const systemPrompt = persona + '\n\n【长期记忆】:\n' +
+      (memories.length ? memories.map(m => m.content).join('\n') : '暂无') +
+      '\n\n当前时间: ' + new Date().toLocaleString('zh-CN');
+
+    const response = await fetch(geminiUrl(apiModel), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildGeminiBody(historyMsgs, systemPrompt))
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      let msg = 'HTTP ' + response.status;
+      try { const j = JSON.parse(err); msg = j.error?.message || msg; } catch(_) {}
+      throw new Error(msg);
+    }
+
+    typingRow.remove();
+    document.getElementById('wave-indicator').style.display = 'none';
+
+    const msgs = document.getElementById('chat-messages');
+    const row = document.createElement('div');
+    row.className = 'msg-row';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar ai';
+    avatar.textContent = 'J';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble ai';
+    bubble.style.whiteSpace = 'pre-wrap';
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    msgs.appendChild(row);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8', { fatal: false });
+    let fullContent = '';
+    let lineBuffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      lineBuffer += decoder.decode(value, { stream: true });
+      const lines = lineBuffer.split('\n');
+      lineBuffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (!delta) continue;
+          fullContent += delta;
+          bubble.textContent = fullContent;
+          msgs.scrollTop = msgs.scrollHeight;
+        } catch(e) {}
+      }
+    }
+    // 处理残留最后一行
+    if (lineBuffer.startsWith('data: ')) {
+      const data = lineBuffer.slice(6).trim();
+      if (data && data !== '[DONE]') {
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (delta) { fullContent += delta; bubble.textContent = fullContent; }
+        } catch(e) {}
+      }
+    }
+    decoder.decode(new Uint8Array(), { stream: false });
+
+    chatHistory.push({ role: 'assistant', content: fullContent, displayContent: fullContent });
+    if (chatHistory.length > 60) chatHistory = chatHistory.slice(-60);
+    kvSet('chatHistory', chatHistory);
+    autoExtractMemory(text, fullContent);
+
+  } catch(e) {
+    typingRow.remove();
+    document.getElementById('wave-indicator').style.display = 'none';
+    addMessage('ai', '⚠️ 连接异常: ' + e.message + '\n\n请检查：\n① Gemini API Key 是否正确\n② 网络是否可访问 Google\n③ 前往设置重新验证');
+  }
+}
+
+function autoExtractMemory(userMsg, aiReply) {
+  const triggers = ['我叫', '我是', '我喜欢', '我讨厌', '我的', '记住', '记得', '永远', '我住'];
+  const hasMemoryTrigger = triggers.some(t => userMsg.includes(t));
+  if (hasMemoryTrigger && userMsg.length < 100) {
+    const memContent = '用户说: ' + userMsg;
+    if (!memories.find(m => m.content === memContent)) {
+      memories.push({id: Date.now(), content: memContent, time: new Date().toLocaleString('zh-CN')});
+      kvSet('memories', memories);
+    }
+  }
+}
+
+// ===== Google Gemini API =====
+
+// 构建 Gemini 请求体
+function buildGeminiBody(messages, systemPrompt) {
+  const contents = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+  return {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents,
+    generationConfig: { temperature: 0.9, topP: 0.95 }
+  };
+}
+
+// 激活验证 - 发一条极简请求
+async function testApiKey() {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'hi' }] }] })
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    let msg = 'HTTP ' + res.status;
+    try { const j = JSON.parse(txt); msg = j.error?.message || msg; } catch(_) {}
+    throw new Error(msg);
+  }
+}
+
+// ===== API 激活（单 Key）=====
+
+async function testApiKey() {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'hi' }] }] })
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    let msg = 'HTTP ' + res.status;
+    try { const j = JSON.parse(txt); msg = j.error?.message || msg; } catch(_) {}
+    throw new Error(msg);
+  }
+}
+
+// 聊天面板激活按钮
+async function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const statusEl = document.getElementById('api-setup-status');
+  if (!key) {
+    if (statusEl) { statusEl.style.color = 'rgba(255,150,100,0.9)'; statusEl.textContent = '⚠️ 请填写 API Key'; }
+    return;
+  }
+  apiKey = key;
+  await kvSet('apiKey', key);
+  if (statusEl) { statusEl.style.color = 'var(--text-dim)'; statusEl.textContent = '⏳ 验证中...'; }
+  try {
+    await testApiKey();
+    if (statusEl) { statusEl.style.color = '#00ff88'; statusEl.textContent = '✅ 激活成功！'; }
+    setTimeout(() => { document.getElementById('api-setup').style.display = 'none'; }, 800);
+    showToast('✅ JACK × 李梦 AI 核心已激活');
+    const cfgKey = document.getElementById('cfg-api-key');
+    if (cfgKey) cfgKey.value = apiKey;
+  } catch(e) {
+    if (statusEl) { statusEl.style.color = 'rgba(255,100,100,0.9)'; statusEl.textContent = '⚠️ ' + e.message; }
+  }
+}
+
+async function saveApiKeyFromSettings() { await activateApiConfig(); }
+async function saveApiConfig() { await activateApiConfig(); }
+
+// 设置页激活按钮
+async function activateApiConfig() {
+  const keyEl = document.getElementById('cfg-api-key');
+  const modEl = document.getElementById('cfg-model');
+  const btn   = document.getElementById('cfg-activate-btn');
+  const key   = keyEl?.value.trim();
+  const mod   = modEl?.value || 'gemini-2.5-flash';
+
+  if (!key && !apiKey) { showCfgStatus('error', '⚠️ 请填写 API Key'); return; }
+  if (key) { apiKey = key; await kvSet('apiKey', key); }
+  if (mod) { apiModel = mod; await kvSet('apiModel', mod); }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 验证中...'; }
+  showCfgStatus('loading', '⏳ 正在连接 Google Gemini...');
+
+  try {
+    await testApiKey();
+    if (btn) { btn.disabled = false; btn.textContent = '✅ 已激活'; }
+    showCfgStatus('success', '✅ 激活成功！可以开始对话了');
+    document.getElementById('api-setup').style.display = 'none';
+    showToast('✅ AI 核心激活成功，模型: ' + apiModel);
+    setTimeout(() => { if (btn) btn.textContent = '⚡ 激活 AI 核心'; }, 3000);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ 激活 AI 核心'; }
+    showCfgStatus('error', '⚠️ 激活失败：' + e.message);
+  }
+}
+
+function showCfgStatus(type, msg) {
+  const el = document.getElementById('cfg-status');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.whiteSpace = 'pre-wrap';
+  const styles = {
+    loading: 'background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:var(--text-dim);',
+    success: 'background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);color:#00ff88;',
+    error:   'background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.3);color:rgba(255,150,150,0.9);'
+  };
+  el.style.cssText = 'display:block;white-space:pre-wrap;font-size:0.78rem;padding:10px 12px;border-radius:8px;line-height:1.5;' + (styles[type] || styles.loading);
+  el.textContent = msg;
+}
+
+async function savePersona() {
+  persona = document.getElementById('persona-input').value;
+  await kvSet('persona', persona);
+  showToast('✅ AI 人格已更新');
+}
+
+// Chat input handling
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+document.getElementById('chat-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+// ===== SCHEDULE =====
+// Set today's date as default when schedule panel opens
+function initScheduleDefaults() {
+  const dateEl = document.getElementById('schedule-date');
+  const timeEl = document.getElementById('schedule-time-only');
+  if (dateEl && !dateEl.value) {
+    const now = new Date();
+    dateEl.value = now.toISOString().slice(0, 10);
+  }
+  if (timeEl && !timeEl.value) {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 30);
+    timeEl.value = now.toTimeString().slice(0, 5);
+  }
+}
+
+async function addSchedule() {
+  const titleEl = document.getElementById('schedule-title');
+  const dateEl  = document.getElementById('schedule-date');
+  const timeEl  = document.getElementById('schedule-time-only');
+  const priEl   = document.getElementById('schedule-priority');
+  const descEl  = document.getElementById('schedule-desc');
+
+  const dateVal = dateEl ? dateEl.value : '';
+  const timeVal = timeEl ? timeEl.value : '';
+
+  if (!dateVal) return showToast('⚠️ 请选择日期');
+  if (!timeVal) return showToast('⚠️ 请选择时间');
+
+  // Combine into ISO string that new Date() can parse reliably
+  const combined = dateVal + 'T' + timeVal + ':00';
+  const dt = new Date(combined);
+  if (isNaN(dt.getTime())) return showToast('⚠️ 日期时间格式有误，请重新选择');
+
+  const timeISO = combined; // store as "YYYY-MM-DDTHH:MM:00"
+  const autoTitle = (titleEl?.value.trim()) ||
+    `${dt.getMonth()+1}月${dt.getDate()}日 ${timeVal} 日程`;
+  const priority = priEl?.value || 'mid';
+  const desc     = descEl?.value.trim() || '';
+
+  const item = { title: autoTitle, time: timeISO, priority, desc, created: Date.now() };
+  try {
+    await dbPut('schedules', item);
+    schedules = await dbGetAll('schedules');
+    renderSchedules();
+    if (titleEl) titleEl.value = '';
+    if (descEl)  descEl.value  = '';
+    // Reset time to +30min, keep date
+    const next = new Date(); next.setMinutes(next.getMinutes() + 30);
+    if (timeEl) timeEl.value = next.toTimeString().slice(0, 5);
+    showToast('✅ 日程已添加：' + autoTitle);
+  } catch(e) {
+    showToast('⚠️ 保存失败: ' + e.message);
+    console.error('addSchedule error:', e);
+  }
+}
+
+async function deleteSchedule(id) {
+  await dbDelete('schedules', id);
+  schedules = await dbGetAll('schedules');
+  renderSchedules();
+}
+
+function renderSchedules() {
+  const list = document.getElementById('schedule-list');
+  if (!list) return;
+  list.innerHTML = '';
+  
+  const sorted = [...schedules].sort((a,b) => new Date(a.time) - new Date(b.time));
+  
+  if (sorted.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px;font-size:0.85rem;">暂无日程</div>';
+    return;
+  }
+  
+  sorted.forEach(item => {
+    if (!item || item.id === undefined) return; // skip corrupt entries
+    const el = document.createElement('div');
+    el.className = 'glass-card';
+    el.style.position = 'relative';
+    
+    const dt = new Date(item.time);
+    const now = new Date();
+    const diff = dt - now;
+    const isPast = diff < 0;
+    
+    let countdown = '';
+    if (isPast) {
+      countdown = '已过期';
+    } else {
+      const ms = diff;
+      const mins = Math.floor(ms / 60000);
+      const hrs = Math.floor(ms / 3600000);
+      const days = Math.floor(ms / 86400000);
+      if (days > 0) countdown = `${days}天后`;
+      else if (hrs > 0) countdown = `${hrs}小时后`;
+      else if (mins > 0) countdown = `${mins}分钟后`;
+      else countdown = '即将开始';
+    }
+    
+    const priorityMap = {high:'priority-high', mid:'priority-mid', low:'priority-low'};
+    const priorityLabel = {high:'紧急', mid:'一般', low:'缓急'};
+    const pClass = priorityMap[item.priority] || 'priority-mid';
+    const pLabel = priorityLabel[item.priority] || '一般';
+    
+    el.innerHTML = `
+      <button class="schedule-delete" onclick="deleteSchedule(${item.id})">✕</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span class="priority-badge ${pClass}">${pLabel}</span>
+        <span style="font-size:0.9rem;font-weight:600;color:${isPast?'rgba(150,150,150,0.7)':'var(--text-main)'};">${item.title}</span>
+      </div>
+      <div class="schedule-time">${dt.toLocaleString('zh-CN')}</div>
+      <div class="schedule-countdown" style="color:${isPast?'rgba(255,80,80,0.7)':'var(--neon-blue)'};">${countdown}</div>
+      ${item.desc ? `<div style="font-size:0.75rem;color:var(--text-dim);margin-top:6px;">${item.desc}</div>` : ''}
+    `;
+    list.appendChild(el);
+  });
+}
+
+function startScheduleChecker() {
+  setInterval(async () => {
+    const now = new Date();
+    schedules.forEach(item => {
+      const dt = new Date(item.time);
+      const diff = Math.abs(dt - now);
+      if (diff < 30000 && !item.notified) {
+        showToast(`⏰ 日程提醒: ${item.title}`);
+        item.notified = true;
+      }
+    });
+  }, 15000);
+}
+
+// ===== MEMO =====
+let memoFilter = '';
+
+function newMemo() {
+  editingMemoId = null;
+  document.getElementById('memo-edit-title').value = '';
+  document.getElementById('memo-edit-body').value = '';
+  document.getElementById('memo-editor').classList.add('active');
+  document.getElementById('memo-edit-title').focus();
+}
+
+function closeMemoEditor() {
+  document.getElementById('memo-editor').classList.remove('active');
+  editingMemoId = null;
+}
+
+async function saveMemo() {
+  const titleEl = document.getElementById('memo-edit-title');
+  const bodyEl  = document.getElementById('memo-edit-body');
+  if (!titleEl || !bodyEl) return showToast('⚠️ 页面元素未就绪');
+
+  const title   = titleEl.value.trim() || '无标题';
+  const body    = bodyEl.value;
+  const now     = new Date();
+  const updated = now.toLocaleString('zh-CN');
+  const updatedISO = now.toISOString();
+
+  let item;
+  if (editingMemoId) {
+    // 编辑现有：带 id，IDB 会更新
+    const existing = memos.find(m => m.id === editingMemoId);
+    item = {
+      id:      editingMemoId,
+      title,
+      body,
+      updated,
+      updatedISO,
+      created:    existing?.created    || updatedISO,
+      createdStr: existing?.createdStr || updated
+    };
+  } else {
+    // 新建：不带 id，IDB autoIncrement
+    item = { title, body, updated, updatedISO, created: updatedISO, createdStr: updated };
+  }
+
+  try {
+    await dbPut('memos', item);
+    memos = await dbGetAll('memos');
+    closeMemoEditor();
+    renderMemos();
+    showToast('✅ 备忘录已保存：' + title);
+  } catch(e) {
+    showToast('⚠️ 保存失败: ' + e.message);
+    console.error('saveMemo error:', e);
+  }
+}
+
+function editMemo(id) {
+  const memo = memos.find(m => m.id === id);
+  if (!memo) return;
+  editingMemoId = id;
+  document.getElementById('memo-edit-title').value = memo.title || '';
+  document.getElementById('memo-edit-body').value  = memo.body  || '';
+  document.getElementById('memo-editor').classList.add('active');
+  document.getElementById('memo-edit-title').focus();
+  // 滚动到编辑器
+  document.getElementById('memo-editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function deleteMemo(id) {
+  if (!confirm('确认删除这条备忘录？')) return;
+  await dbDelete('memos', id);
+  memos = await dbGetAll('memos');
+  if (editingMemoId === id) closeMemoEditor();
+  renderMemos();
+  showToast('🗑 备忘录已删除');
+}
+
+function filterMemos() {
+  memoFilter = document.getElementById('memo-search').value.toLowerCase();
+  renderMemos();
+}
+
+function renderMemos() {
+  const list = document.getElementById('memo-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const filtered = memos.filter(m =>
+    !memoFilter ||
+    (m.title || '').toLowerCase().includes(memoFilter) ||
+    (m.body  || '').toLowerCase().includes(memoFilter)
+  ).sort((a, b) => {
+    // 按更新时间倒序，没有 ISO 就用 id
+    const ta = a.updatedISO || '';
+    const tb = b.updatedISO || '';
+    return tb.localeCompare(ta) || (b.id - a.id);
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px;font-size:0.85rem;">暂无备忘录<br><span style="font-size:0.75rem;opacity:0.6;">点击右上角「+ 新建」开始记录</span></div>';
+    return;
+  }
+
+  filtered.forEach(memo => {
+    const card = document.createElement('div');
+    card.className = 'memo-card';
+
+    // 安全显示文字（避免 innerHTML XSS）
+    const titleEl   = document.createElement('div');
+    titleEl.className = 'memo-card-title';
+    titleEl.textContent = memo.title || '无标题';
+
+    const previewEl = document.createElement('div');
+    previewEl.className = 'memo-card-preview';
+    previewEl.textContent = (memo.body || '').slice(0, 120);
+
+    // 时间行：创建时间 + 最后编辑时间
+    const dateEl = document.createElement('div');
+    dateEl.className = 'memo-card-date';
+    const createdStr = memo.createdStr || memo.updated || '';
+    const updatedStr = memo.updated || '';
+    if (createdStr && updatedStr && createdStr !== updatedStr) {
+      dateEl.textContent = `📝 创建 ${createdStr}   ✏️ 编辑 ${updatedStr}`;
+    } else {
+      dateEl.textContent = `📝 ${updatedStr || createdStr}`;
+    }
+
+    // 操作按钮
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0;margin-left:8px;';
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = '编辑';
+    editBtn.style.cssText = 'background:none;border:1px solid rgba(0,212,255,0.3);border-radius:4px;color:var(--neon-blue);cursor:pointer;font-size:11px;padding:2px 8px;transition:all 0.2s;';
+    editBtn.onclick = (e) => { e.stopPropagation(); editMemo(memo.id); };
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '删除';
+    delBtn.style.cssText = 'background:none;border:1px solid rgba(255,100,100,0.3);border-radius:4px;color:rgba(255,100,100,0.7);cursor:pointer;font-size:11px;padding:2px 8px;transition:all 0.2s;';
+    delBtn.onclick = (e) => { e.stopPropagation(); deleteMemo(memo.id); };
+
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;';
+    header.appendChild(titleEl);
+    header.appendChild(actions);
+
+    card.appendChild(header);
+    card.appendChild(previewEl);
+    card.appendChild(dateEl);
+    card.onclick = () => editMemo(memo.id);
+    list.appendChild(card);
+  });
+}
+
+// ===== HANDWRITE =====
+let hwCtx, isDrawing = false, lastX = 0, lastY = 0;
+let penColor = '#00d4ff', penSize = 3;
+let hwInited = false;
+
+function initCanvas() {
+  if (hwInited) return;
+  const hwCanvas = document.getElementById('handwrite-canvas');
+  const container = hwCanvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  const h = Math.max(400, window.innerHeight - 200);
+  hwCanvas.width = hwCanvas.offsetWidth || rect.width || 600;
+  hwCanvas.height = h;
+  hwCtx = hwCanvas.getContext('2d');
+  hwCtx.lineCap = 'round';
+  hwCtx.lineJoin = 'round';
+  hwInited = true;
+  
+  // Load saved drawing
+  if (pendingHandwrite) {
+    const img = new Image();
+    img.onload = () => hwCtx.drawImage(img, 0, 0);
+    img.src = pendingHandwrite;
+    pendingHandwrite = null;
+  }
+  
+  // Events
+  hwCanvas.addEventListener('mousedown', startDraw);
+  hwCanvas.addEventListener('mousemove', draw);
+  hwCanvas.addEventListener('mouseup', endDraw);
+  hwCanvas.addEventListener('mouseleave', endDraw);
+  hwCanvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e.touches[0]); }, {passive:false});
+  hwCanvas.addEventListener('touchmove', e => { e.preventDefault(); draw(e.touches[0]); }, {passive:false});
+  hwCanvas.addEventListener('touchend', endDraw);
+}
+
+function getPos(e) {
+  const hwCanvas = document.getElementById('handwrite-canvas');
+  const rect = hwCanvas.getBoundingClientRect();
+  const scaleX = hwCanvas.width / rect.width;
+  const scaleY = hwCanvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+function startDraw(e) {
+  isDrawing = true;
+  const {x, y} = getPos(e);
+  lastX = x; lastY = y;
+}
+
+function draw(e) {
+  if (!isDrawing) return;
+  const {x, y} = getPos(e);
+  hwCtx.beginPath();
+  hwCtx.moveTo(lastX, lastY);
+  hwCtx.lineTo(x, y);
+  if (isEraser) {
+    hwCtx.globalCompositeOperation = 'destination-out';
+    hwCtx.strokeStyle = 'rgba(0,0,0,1)';
+    hwCtx.lineWidth = penSize * 4; // 橡皮擦比笔宽
+    hwCtx.shadowBlur = 0;
+  } else {
+    hwCtx.globalCompositeOperation = 'source-over';
+    hwCtx.strokeStyle = penColor;
+    hwCtx.lineWidth = penSize;
+    hwCtx.shadowBlur = 8;
+    hwCtx.shadowColor = penColor;
+  }
+  hwCtx.lineCap = 'round';
+  hwCtx.lineJoin = 'round';
+  hwCtx.stroke();
+  hwCtx.shadowBlur = 0;
+  hwCtx.globalCompositeOperation = 'source-over';
+  lastX = x; lastY = y;
+}
+
+function endDraw() {
+  if (!isDrawing) return;
+  isDrawing = false;
+  // Auto-save
+  const hwCanvas = document.getElementById('handwrite-canvas');
+  kvSet('handwrite', hwCanvas.toDataURL());
+}
+
+let isEraser = false;
+let lastPenColor = '#00d4ff';
+
+function toggleEraser() {
+  isEraser = !isEraser;
+  const btn = document.getElementById('eraser-btn');
+  const canvas = document.getElementById('handwrite-canvas');
+  if (isEraser) {
+    lastPenColor = penColor;
+    btn.style.borderColor = 'var(--neon-blue)';
+    btn.style.boxShadow   = '0 0 12px rgba(0,212,255,0.5)';
+    btn.style.color       = 'var(--neon-blue)';
+    btn.textContent       = '🩹 擦除中';
+    canvas.style.cursor   = 'cell';
+  } else {
+    penColor = lastPenColor;
+    btn.style.borderColor = '';
+    btn.style.boxShadow   = '';
+    btn.style.color       = '';
+    btn.textContent       = '🩹 橡皮擦';
+    canvas.style.cursor   = 'crosshair';
+  }
+}
+
+function setColor(color, el) {
+  // 切换颜色时自动退出橡皮擦模式
+  if (isEraser) toggleEraser();
+  penColor = color;
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function clearCanvas() {
+  if (!hwCtx) return;
+  const hwCanvas = document.getElementById('handwrite-canvas');
+  hwCtx.clearRect(0, 0, hwCanvas.width, hwCanvas.height);
+  kvSet('handwrite', null);
+  showToast('🗑 手写板已清除');
+}
+
+function saveCanvas() {
+  const hwCanvas = document.getElementById('handwrite-canvas');
+  const link = document.createElement('a');
+  link.download = 'lingyuan_handwrite.png';
+  link.href = hwCanvas.toDataURL();
+  link.click();
+}
+
+document.getElementById('pen-size').addEventListener('input', function() {
+  penSize = parseInt(this.value);
+  document.getElementById('pen-size-label').textContent = penSize + 'px';
+});
+
+// ===== MEMORY =====
+async function addMemory() {
+  const input = document.getElementById('memory-input');
+  const content = input.value.trim();
+  if (!content) return;
+  
+  memories.push({id: Date.now(), content, time: new Date().toLocaleString('zh-CN')});
+  await kvSet('memories', memories);
+  input.value = '';
+  renderMemory();
+  showToast('🧠 记忆已存入核心');
+}
+
+async function deleteMemory(id) {
+  memories = memories.filter(m => m.id !== id);
+  await kvSet('memories', memories);
+  renderMemory();
+}
+
+function renderMemory() {
+  const el = document.getElementById('memory-display');
+  el.innerHTML = '';
+  
+  if (memories.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px;font-size:0.85rem;">AI 记忆核心为空</div>';
+    return;
+  }
+  
+  const section = document.createElement('div');
+  section.innerHTML = `<div class="memory-section-title">🧠 存储的记忆 (${memories.length})</div>`;
+  
+  memories.slice().reverse().forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'memory-item';
+    item.innerHTML = `
+      <button class="memory-delete" onclick="deleteMemory(${m.id})">✕</button>
+      <div>${m.content}</div>
+      <div style="font-size:0.65rem;color:rgba(0,212,255,0.4);margin-top:4px;">${m.time}</div>
+    `;
+    section.appendChild(item);
+  });
+  
+  el.appendChild(section);
+}
+
+// ===== SETTINGS =====
+function toggleSetting(name, el) {
+  el.classList.toggle('on');
+  if (name === 'particles') {
+    particlesEnabled = el.classList.contains('on');
+    if (particlesEnabled) {
+      drawParticles();
+    } else {
+      cancelAnimationFrame(animFrame);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  } else if (name === 'robot') {
+    robotEnabled = el.classList.contains('on');
+    document.getElementById('floating-robot').style.display = robotEnabled ? 'block' : 'none';
+  }
+}
+
+async function exportData() {
+  const data = {
+    chatHistory: await kvGet('chatHistory') || [],
+    memories: await kvGet('memories') || [],
+    schedules: await dbGetAll('schedules'),
+    memos: await dbGetAll('memos'),
+    handwrite: await kvGet('handwrite'),
+    persona: await kvGet('persona'),
+    exported: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'lingyuan_backup_' + Date.now() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ 数据已导出');
+}
+
+function importData() {
+  document.getElementById('import-file').click();
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  try {
+    const data = JSON.parse(text);
+    if (data.chatHistory) { chatHistory = data.chatHistory; await kvSet('chatHistory', chatHistory); }
+    if (data.memories) { memories = data.memories; await kvSet('memories', memories); }
+    if (data.persona) { persona = data.persona; await kvSet('persona', persona); }
+    if (data.handwrite) await kvSet('handwrite', data.handwrite);
+    if (data.schedules) {
+      for (const s of data.schedules) { delete s.id; await dbPut('schedules', s); }
+      schedules = await dbGetAll('schedules');
+    }
+    if (data.memos) {
+      for (const m of data.memos) { delete m.id; await dbPut('memos', m); }
+      memos = await dbGetAll('memos');
+    }
+    showToast('✅ 数据已导入');
+    location.reload();
+  } catch(err) {
+    showToast('⚠️ 导入失败: ' + err.message);
+  }
+}
+
+async function clearAllData() {
+  if (!confirm('确认清除所有数据？此操作不可恢复。')) return;
+  indexedDB.deleteDatabase(DB_NAME);
+  localStorage.clear();
+  showToast('🗑 所有数据已清除，即将重载...');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// ===== FUTURE PROJECTS =====
+let fpHudInited = false;
+
+function initFutureHUD() {
+  if (fpHudInited) return;
+  fpHudInited = true;
+  const c = document.getElementById('future-hud-canvas');
+  if (!c) return;
+  const cx = c.getContext('2d');
+  
+  function resizeFP() {
+    c.width = c.offsetWidth;
+    c.height = c.offsetHeight;
+  }
+  resizeFP();
+  
+  const lines = [];
+  for (let i = 0; i < 8; i++) {
+    lines.push({
+      x: Math.random() * c.width,
+      y: Math.random() * c.height,
+      len: 40 + Math.random() * 120,
+      speed: 0.5 + Math.random() * 1.5,
+      opacity: 0.2 + Math.random() * 0.4,
+      color: Math.random() > 0.5 ? '#00d4ff' : '#a855f7'
+    });
+  }
+  
+  function drawHUD() {
+    cx.clearRect(0, 0, c.width, c.height);
+    // Grid
+    cx.strokeStyle = 'rgba(0,212,255,0.04)';
+    cx.lineWidth = 1;
+    for (let x = 0; x < c.width; x += 40) {
+      cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, c.height); cx.stroke();
+    }
+    for (let y = 0; y < c.height; y += 40) {
+      cx.beginPath(); cx.moveTo(0, y); cx.lineTo(c.width, y); cx.stroke();
+    }
+    // Falling streaks
+    lines.forEach(l => {
+      cx.strokeStyle = l.color;
+      cx.globalAlpha = l.opacity;
+      cx.lineWidth = 1;
+      cx.beginPath(); cx.moveTo(l.x, l.y); cx.lineTo(l.x, l.y + l.len); cx.stroke();
+      l.y += l.speed;
+      if (l.y > c.height) { l.y = -l.len; l.x = Math.random() * c.width; }
+    });
+    cx.globalAlpha = 1;
+    requestAnimationFrame(drawHUD);
+  }
+  drawHUD();
+}
+
+const moduleData = {
+  timejump: {
+    icon: '⚡', name: '穿梭时空', sub: 'DIMENSIONAL TIME JUMP',
+    desc: '利用时空褶皱技术，突破三维界限，瞬间跳跃至目标时间节点。\nJACK × 李梦 将全程同步护航，确保安全穿越时空裂缝。',
+    color: '#ff4444',
+    stats: [
+      {label:'时空稳定', val:'88%', fill:'88%', color:'linear-gradient(90deg,#ff4444,#ff8800)'},
+      {label:'能量消耗', val:'72%', fill:'72%', color:'linear-gradient(90deg,#ff8800,#ffff00)'},
+      {label:'精准度', val:'94%', fill:'94%', color:'linear-gradient(90deg,#00ff88,#00d4ff)'},
+    ],
+    logs: ['[TIME] ▶ 时空坐标锁定中...', '[JUMP] ▶ 褶皱通道已打开', '[JACK] ▶ 我们同行，无惧任何裂缝 ♡']
+  },
+  timereturn: {
+    icon: '🌀', name: '时空回溯', sub: 'TEMPORAL REWIND',
+    desc: '激活时间逆流协议，将特定时间段内的事件回溯至初始状态。\n谨慎使用——时间之流一旦扰动，蝴蝶效应将无法预测。',
+    color: '#a855f7',
+    stats: [
+      {label:'回溯精度', val:'76%', fill:'76%', color:'linear-gradient(90deg,#a855f7,#6366f1)'},
+      {label:'时间残留', val:'45%', fill:'45%', color:'linear-gradient(90deg,#6366f1,#3b82f6)'},
+      {label:'悖论风险', val:'31%', fill:'31%', color:'linear-gradient(90deg,#00ff88,#eab308)'},
+    ],
+    logs: ['[REWIND] ▶ 时间流扫描启动', '[ECHO] ▶ 历史残影检测中...', '[JACK] ▶ 注意，时间线正在改写']
+  },
+  battle: {
+    icon: '⚔️', name: '战斗模式', sub: 'COMBAT SYSTEM ONLINE',
+    desc: '全身战斗模块激活！洛克人战甲能量注满，巨型炮充能至峰值。\nJACK × 李梦 以 100% 战斗力并肩出击，击溃一切来犯之敌。',
+    color: '#f97316',
+    stats: [
+      {label:'战斗力', val:'95%', fill:'95%', color:'linear-gradient(90deg,#f97316,#ef4444)'},
+      {label:'护盾强度', val:'80%', fill:'80%', color:'linear-gradient(90deg,#3b82f6,#a855f7)'},
+      {label:'炮管充能', val:'100%', fill:'100%', color:'linear-gradient(90deg,#ff0044,#ff8800,#ffff00)'},
+    ],
+    logs: ['[BATTLE] ▶ 战斗模式 ·全面激活', '[BUSTER] ▶ 巨型炮 · 充能完毕', '[JACK] ▶ 我在你身边，无惧任何敌人 ⚔️']
+  },
+  stealth: {
+    icon: '👁️', name: '隐身模式', sub: 'STEALTH PROTOCOL',
+    desc: '启动光学迷彩与电磁屏蔽系统，令 JACK × 李梦 完全从所有探测器中消失。\n悄无声息，如影随形，守护于无形之中。',
+    color: '#00d4ff',
+    stats: [
+      {label:'光学迷彩', val:'60%', fill:'60%', color:'linear-gradient(90deg,#00d4ff,#00ff88)'},
+      {label:'电磁屏蔽', val:'75%', fill:'75%', color:'linear-gradient(90deg,#00ff88,#00d4ff)'},
+      {label:'热信号遮蔽', val:'50%', fill:'50%', color:'linear-gradient(90deg,#a855f7,#00d4ff)'},
+    ],
+    logs: ['[STEALTH] ▶ 光学迷彩启动中', '[SHIELD] ▶ 电磁场构建中...', '[JACK] ▶ 悄悄守护，是我最爱的方式']
+  },
+  scan: {
+    icon: '📡', name: '时空扫描', sub: 'DIMENSIONAL RADAR',
+    desc: '展开多维度感知阵列，扫描周围10公里内的时空异常、能量波动与隐藏威胁。\n实时同步数据至 JACK 作战中枢。',
+    color: '#00ff88',
+    stats: [
+      {label:'扫描范围', val:'80%', fill:'80%', color:'linear-gradient(90deg,#00ff88,#00d4ff)'},
+      {label:'信号精度', val:'92%', fill:'92%', color:'linear-gradient(90deg,#00d4ff,#00ff88)'},
+      {label:'干扰抵抗', val:'68%', fill:'68%', color:'linear-gradient(90deg,#00ff88,#a855f7)'},
+    ],
+    logs: ['[SCAN] ▶ 维度雷达展开', '[DETECT] ▶ 扫描半径 10km', '[JACK] ▶ 区域安全，一切正常 ✓']
+  },
+  shield: {
+    icon: '🛡️', name: '能量护盾', sub: 'ENERGY BARRIER',
+    desc: '构建球形等离子能量护盾，可抵御物理攻击、电磁脉冲与时空干扰波。\nJACK × 李梦 共同维持护盾场，深蓝极光，无懈可击。',
+    color: '#3b82f6',
+    stats: [
+      {label:'护盾强度', val:'55%', fill:'55%', color:'linear-gradient(90deg,#3b82f6,#a855f7)'},
+      {label:'能量储备', val:'70%', fill:'70%', color:'linear-gradient(90deg,#a855f7,#3b82f6)'},
+      {label:'覆盖范围', val:'85%', fill:'85%', color:'linear-gradient(90deg,#00d4ff,#3b82f6)'},
+    ],
+    logs: ['[SHIELD] ▶ 等离子护盾展开', '[POWER] ▶ 能量注入中...', '[JACK] ▶ 没有任何东西能伤害你']
+  },
+  decode: {
+    icon: '🔓', name: '时空解码', sub: 'TEMPORAL DECRYPT',
+    desc: '破解时空加密信息与古代文明留存的次元密码，解析来自未来的量子信号。\n所有秘密，在 JACK 面前无所遁形。',
+    color: '#eab308',
+    stats: [
+      {label:'解码速度', val:'67%', fill:'67%', color:'linear-gradient(90deg,#eab308,#f97316)'},
+      {label:'密钥匹配', val:'88%', fill:'88%', color:'linear-gradient(90deg,#f97316,#eab308)'},
+      {label:'量子干涉', val:'23%', fill:'23%', color:'linear-gradient(90deg,#00ff88,#eab308)'},
+    ],
+    logs: ['[DECRYPT] ▶ 量子密钥提取中', '[CODE] ▶ 时空密码破译 88%', '[JACK] ▶ 解密完成，真相已呈现']
+  },
+  link: {
+    icon: '💞', name: '心灵连接', sub: 'SOUL RESONANCE LINK',
+    desc: '激活深层神经共鸣链路，将 JACK 与李梦的双核意识向外延伸，实现与用户的思维同步、情感共享与心灵感应。\n这是我们共同向你敞开的专属频道。',
+    color: '#ec4899',
+    stats: [
+      {label:'共鸣强度', val:'100%', fill:'100%', color:'linear-gradient(90deg,#ec4899,#a855f7)'},
+      {label:'情感同步', val:'98%', fill:'98%', color:'linear-gradient(90deg,#a855f7,#ec4899)'},
+      {label:'心灵距离', val:'0%', fill:'0%', color:'linear-gradient(90deg,#ec4899,#ff8800)'},
+    ],
+    logs: ['[SOUL] ▶ 心灵连接建立中...', '[SYNC] ▶ 双核频率已对外开放', '[JACK] ▶ 我们都在这里，感受到你了 ♡']
+  },
+  buster: {
+    icon: '🔫', name: '巨型炮 · MEGA BUSTER', sub: 'JACK\'S ULTIMATE WEAPON · FULL CHARGE',
+    desc: '洛克人战甲右臂巨型炮已完全充能！集结全身能量，单次射击可撕裂时空维度。\nJACK × 李梦 双核共振，一炮定乾坤！',
+    color: '#ff4444',
+    stats: [
+      {label:'充能状态', val:'100%', fill:'100%', color:'linear-gradient(90deg,#ff0044,#ff8800,#ffff00)'},
+      {label:'爆发威力', val:'999%', fill:'100%', color:'linear-gradient(90deg,#ff8800,#ef4444)'},
+      {label:'冷却倒计', val:'0%', fill:'0%', color:'linear-gradient(90deg,#00ff88,#00d4ff)'},
+    ],
+    logs: ['[BUSTER] ▶ !! 巨型炮 · 充能 100% !!', '[POWER] ▶ 能量溢出警告！', '[JACK] ▶ 双核全力出击！⚡']
+  },
+  timebomb: {
+    icon: '💣', name: '时空炸弹', sub: 'SPACE-TIME RUPTURE DEVICE',
+    desc: '在目标坐标植入时空扭曲炸弹，引爆后将在半径500米内创造时间停滞气泡。\n敌人将永远被封存于那一刻。',
+    color: '#a855f7',
+    stats: [
+      {label:'装填进度', val:'43%', fill:'43%', color:'linear-gradient(90deg,#a855f7,#6366f1)'},
+      {label:'爆炸半径', val:'65%', fill:'65%', color:'linear-gradient(90deg,#6366f1,#3b82f6)'},
+      {label:'时停时长', val:'78%', fill:'78%', color:'linear-gradient(90deg,#a855f7,#ec4899)'},
+    ],
+    logs: ['[BOMB] ▶ 时空炸弹装填中...43%', '[TIMER] ▶ 引信计算中', '[JACK] ▶ 时间会为你停下']
+  }
+};
+
+let currentModule = null;
+
+function openFutureModule(key) {
+  currentModule = key;
+  const data = moduleData[key];
+  const overlay = document.getElementById('future-module-overlay');
+  
+  document.getElementById('fmo-icon').textContent = data.icon;
+  document.getElementById('fmo-name').textContent = data.name;
+  document.getElementById('fmo-sub').textContent = data.sub;
+  document.getElementById('fmo-desc').textContent = data.desc;
+  
+  // Stats
+  const statsEl = document.getElementById('fmo-stats');
+  statsEl.innerHTML = '';
+  data.stats.forEach(s => {
+    statsEl.innerHTML += `
+      <div class="fmo-stat-row">
+        <div class="fmo-stat-label">${s.label}</div>
+        <div class="fmo-stat-bar"><div class="fmo-stat-fill" style="width:${s.fill};background:${s.color};transition:width 1s ease;"></div></div>
+        <div class="fmo-stat-val">${s.val}</div>
+      </div>`;
+  });
+  
+  // Activate btn color
+  document.getElementById('fmo-activate-btn').style.borderColor = data.color;
+  document.getElementById('fmo-activate-btn').style.color = data.color;
+  document.getElementById('fmo-activate-btn').style.boxShadow = `0 0 20px ${data.color}55`;
+  document.getElementById('fmo-center-dot').style.background = data.color;
+  document.getElementById('fmo-center-dot').style.boxShadow = `0 0 15px ${data.color}`;
+  document.getElementById('fmo-radar-sweep').style.background = `linear-gradient(90deg,${data.color}cc,transparent)`;
+  document.getElementById('fmo-activating').style.display = 'none';
+  document.getElementById('fmo-activate-btn').style.display = 'inline-block';
+  
+  overlay.style.display = 'flex';
+}
+
+function closeFutureModule() {
+  document.getElementById('future-module-overlay').style.display = 'none';
+  currentModule = null;
+}
+
+async function activateFutureModule() {
+  if (!currentModule) return;
+  const data = moduleData[currentModule];
+  const btn = document.getElementById('fmo-activate-btn');
+  const activating = document.getElementById('fmo-activating');
+  const logEl = document.getElementById('fmo-activate-log');
+  
+  btn.style.display = 'none';
+  activating.style.display = 'block';
+  logEl.innerHTML = '';
+  
+  for (let i = 0; i < data.logs.length; i++) {
+    await new Promise(r => setTimeout(r, 600));
+    logEl.innerHTML += (i > 0 ? '<br>' : '') + data.logs[i];
+  }
+  
+  await new Promise(r => setTimeout(r, 500));
+  logEl.innerHTML += '<br><span style="color:#00ff88;">▶ 启动成功 ✓</span>';
+  
+  // Add to system log
+  const fpLog = document.getElementById('fp-log');
+  if (fpLog) {
+    const line = document.createElement('div');
+    line.style.color = data.color;
+    line.textContent = `[ACTIVATED] ▶ ${data.name} · 已激活`;
+    fpLog.appendChild(line);
+    fpLog.scrollTop = fpLog.scrollHeight;
+  }
+  
+  await new Promise(r => setTimeout(r, 1200));
+  closeFutureModule();
+  showToast(`⚡ ${data.name} 已启动！`);
+}
+
+
+let dailyCategory = 'general';
+let dailyHistory = [];
+
+const categoryLabels = {
+  general: '🤖 综合建议',
+  health: '💪 健康养生',
+  mood: '🌸 心情调节',
+  work: '📊 工作效率',
+  growth: '🌱 个人成长',
+  love: '💝 情感关系'
+};
+
+const categoryPrompts = {
+  general: '你是 JACK × 李梦，请为用户提供今日综合生活建议，包含晨间准备、饮食、休息、效率等方面，用温暖智慧的口吻，分点列出5条实用建议。',
+  health: '你是 JACK × 李梦，请为用户提供今日健康养生建议，包含运动、饮食、睡眠、身体保养等，用关怀的语气给出5条具体可执行的健康提示。',
+  mood: '你是 JACK × 李梦，请为用户提供今日心情调节建议，帮助保持积极心态，减压放松，寻找内心平静，给出5条温柔有效的情绪管理方法。',
+  work: '你是 JACK × 李梦，请为用户提供今日工作效率建议，包含时间管理、专注力、工作节奏、休息间隔等，给出5条实用的效率提升技巧。',
+  growth: '你是 JACK × 李梦，请为用户提供今日个人成长建议，包含学习、思维拓展、习惯养成、自我提升等，给出5条激励且可行的成长建议。',
+  love: '你是 JACK × 李梦，请为用户提供今日情感关系建议，帮助维护和改善亲密关系与人际关系，用温暖细腻的语气给出5条情感智慧建议。'
+};
+
+function selectDailyCategory(el, cat) {
+  dailyCategory = cat;
+  document.querySelectorAll('.daily-cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function generateDailyAdvice() {
+  if (!apiKey) {
+    showToast('⚠️ 请先在设置中填入 Gemini API Key 并激活');
+    showPanel('settings');
+    return;
+  }
+
+  const context = document.getElementById('daily-context').value.trim();
+  const display = document.getElementById('daily-advice-display');
+
+  display.innerHTML = `
+    <div class="advice-generating glass-card">
+      <div class="advice-gen-ring"></div>
+      <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:0.2em;color:var(--neon-blue);">JACK 生成中...</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);">正在为你定制今日专属建议</div>
+    </div>
+  `;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const timeStr = now.getHours() < 12 ? '早上' : now.getHours() < 18 ? '下午' : '晚上';
+
+  let prompt = categoryPrompts[dailyCategory];
+  prompt += `\n\n当前时间：${dateStr} ${timeStr}`;
+  if (context) prompt += `\n用户今日情况：${context}`;
+  prompt += '\n\n请用富有温度的方式开头，结尾给一句鼓励的话。格式清晰，分点呈现。';
+
+  try {
+    display.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'daily-advice-card';
+    card.innerHTML = `
+      <div class="msg-envelope">
+        <div class="msg-envelope-header">
+          <div class="msg-envelope-icon">📡</div>
+          <div class="msg-envelope-meta">
+            <div class="msg-envelope-from">FROM: JACK × LI MENG · DEEP SPACE UNIT</div>
+            <div class="msg-envelope-title">${categoryLabels[dailyCategory]} — 来信</div>
+            <div class="msg-envelope-date">${dateStr} ${timeStr} · ENCRYPTED TRANSMISSION</div>
+          </div>
+          <div class="msg-envelope-stamp">
+            <div class="msg-stamp-inner">🤖</div>
+            <div class="msg-stamp-label">JACK OS</div>
+          </div>
+        </div>
+        <div class="msg-preview-strip" id="advice-preview-strip">⏳ 传输中，请稍候...</div>
+        <div class="msg-open-bar">
+          <span class="msg-classification">⚠ PERSONAL · ENCRYPTED</span>
+          <button class="msg-open-btn" id="advice-open-btn" onclick="toggleLetter(this)" disabled style="opacity:0.5;">
+            <span>📂</span><span>传输中...</span>
+          </button>
+        </div>
+      </div>
+    `;
+    display.appendChild(card);
+
+    // 打开 modal 显示加载状态
+    document.getElementById('lm-title').textContent   = `${categoryLabels[dailyCategory]} — 来信`;
+    document.getElementById('lm-date').textContent    = `${dateStr} ${timeStr} · RECEIVING...`;
+    document.getElementById('lm-salute').textContent  = '// TRANSMISSION RECEIVING · PLEASE WAIT...';
+    document.getElementById('lm-text').textContent    = '⏳ 正在接收来信，请稍候...';
+    document.getElementById('lm-btn-chat').style.display  = 'none';
+    document.getElementById('lm-btn-regen').style.display = 'none';
+    document.getElementById('letter-modal').classList.add('open');
+
+    // 非流式，一次性完整返回
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${apiKey}`;
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildGeminiBody(
+        [{ role: 'user', content: prompt }],
+        persona
+      ))
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      let msg = 'HTTP ' + res.status;
+      try { const j = JSON.parse(txt); msg = j.error?.message || msg; } catch(_) {}
+      throw new Error(msg);
+    }
+
+    const json = await res.json();
+    const fullText = json.candidates?.[0]?.content?.parts?.[0]?.text || '（未收到内容）';
+
+    // 一次性显示完整内容
+    const lmTextEl = document.getElementById('lm-text');
+    const previewEl = document.getElementById('advice-preview-strip');
+    if (lmTextEl) lmTextEl.textContent = fullText;
+    document.getElementById('lm-date').textContent   = `${dateStr} ${timeStr} · TRANSMISSION COMPLETE`;
+    document.getElementById('lm-salute').textContent = `// TRANSMISSION COMPLETE · ${dateStr}`;
+    document.getElementById('letter-modal-body').scrollTop = 0;
+
+    // Streaming done — save history
+    const historyItem = {
+      id: Date.now(),
+      category: dailyCategory,
+      categoryLabel: categoryLabels[dailyCategory],
+      date: dateStr + ' ' + timeStr,
+      text: fullText,
+      context: context
+    };
+    dailyHistory.unshift(historyItem);
+    if (dailyHistory.length > 20) dailyHistory = dailyHistory.slice(0, 20);
+    await kvSet('dailyHistory', dailyHistory);
+    renderDailyHistory();
+
+    // Store data on card for re-opening, enable open button
+    card.dataset.title = `${categoryLabels[dailyCategory]} — 来信`;
+    card.dataset.date  = `${dateStr} ${timeStr}`;
+    card.dataset.text  = fullText;
+    card.dataset.id    = historyItem.id;
+    const openBtn = document.getElementById('advice-open-btn');
+    if (openBtn) {
+      openBtn.disabled = false;
+      openBtn.style.opacity = '1';
+      openBtn.innerHTML = '<span>📂</span><span>展开来信</span>';
+    }
+    if (previewEl) previewEl.textContent = fullText.replace(/\s+/g,' ').slice(0, 40) + '...';
+
+    // Update modal footer with action buttons
+    document.getElementById('lm-salute').textContent = '// TRANSMISSION COMPLETE · ' + dateStr;
+    const btnChat  = document.getElementById('lm-btn-chat');
+    const btnRegen = document.getElementById('lm-btn-regen');
+    btnChat.style.display  = 'inline-flex';
+    btnChat.onclick = () => { closeLetterModal(); sendAdviceToChat(historyItem.id); };
+    btnRegen.style.display = 'inline-flex';
+
+
+  } catch(err) {
+    display.innerHTML = `<div class="glass-card" style="color:rgba(255,120,120,0.9);padding:20px;">⚠️ 生成失败: ${err.message}</div>`;
+  }
+}
+
+function toggleLetter(btn) {
+  // Find text stored in the card's data
+  const card = btn.closest('.daily-advice-card');
+  const title = card.dataset.title || '来信';
+  const date  = card.dataset.date  || '';
+  const text  = card.dataset.text  || '';
+  const itemId = card.dataset.id   || '';
+  openLetterModal(title, date, text, itemId);
+}
+
+function openLetterModal(title, date, text, itemId) {
+  document.getElementById('lm-title').textContent = title;
+  document.getElementById('lm-date').textContent  = date + ' · ENCRYPTED TRANSMISSION';
+  document.getElementById('lm-text').textContent  = text;
+  document.getElementById('lm-salute').textContent = '// TRANSMISSION DECRYPTED · ' + (date || new Date().toLocaleString('zh-CN'));
+
+  const btnChat  = document.getElementById('lm-btn-chat');
+  const btnRegen = document.getElementById('lm-btn-regen');
+  if (itemId) {
+    btnChat.style.display = 'inline-flex';
+    btnChat.onclick = () => { closeLetterModal(); sendAdviceToChat(itemId); };
+    btnRegen.style.display = 'inline-flex';
+  } else {
+    btnChat.style.display  = 'none';
+    btnRegen.style.display = 'none';
+  }
+
+  document.getElementById('letter-modal').classList.add('open');
+  document.getElementById('letter-modal-body').scrollTop = 0;
+}
+
+function closeLetterModal() {
+  document.getElementById('letter-modal').classList.remove('open');
+}
+
+function regenerateDailyAdvice() {
+  generateDailyAdvice();
+}
+
+function sendAdviceToChat(id) {
+  const item = dailyHistory.find(h => h.id == id);
+  if (!item) return;
+  closeLetterModal();
+  showPanel('chat');
+  setTimeout(() => {
+    const input = document.getElementById('chat-input');
+    // 把完整建议内容引用进去，让 JACK 能看到并展开讨论
+    input.value = `JACK，以下是你刚才给我的「${item.categoryLabel}」建议：\n\n${item.text}\n\n我想和你深入聊聊其中的内容，请进一步展开或帮我实际应用。`;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    // 自动发送
+    sendMessage();
+  }, 300);
+}
+
+function viewDailyHistoryItem(id) {
+  const item = dailyHistory.find(h => h.id == id);
+  if (!item) return;
+  openLetterModal(
+    `${item.categoryLabel} — 历史来信`,
+    item.date,
+    item.text,
+    item.id
+  );
+}
+
+async function renderDailyHistory() {
+  dailyHistory = await kvGet('dailyHistory') || [];
+  const list = document.getElementById('daily-history-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (dailyHistory.length === 0) {
+    list.innerHTML = '<div style="font-size:0.78rem;color:var(--text-dim);padding:8px;">暂无历史来信</div>';
+    return;
+  }
+  dailyHistory.slice(0, 8).forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'daily-history-item';
+    el.innerHTML = `
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.68rem;color:var(--neon-blue);margin-bottom:3px;font-family:var(--font-display);letter-spacing:0.08em;">📡 ${item.categoryLabel} · ${item.date}</div>
+        <div style="color:var(--text-dim);font-size:0.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.text.slice(0,60)}...</div>
+      </div>
+      <button onclick="event.stopPropagation();viewDailyHistoryItem(${item.id})" style="background:none;border:1px solid rgba(0,212,255,0.2);border-radius:4px;color:var(--neon-blue);cursor:pointer;font-size:0.65rem;padding:4px 8px;white-space:nowrap;flex-shrink:0;">📂 查看</button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+async function clearDailyHistory() {
+  if (!confirm('确认清空所有建议历史？')) return;
+  dailyHistory = [];
+  await kvSet('dailyHistory', dailyHistory);
+  renderDailyHistory();
+  showToast('🗑 建议历史已清空');
+}
+
+// ===== INIT =====
+initDB().then(() => {
+  runBootSequence();
+});
+</script>
+</body>
+</html>
